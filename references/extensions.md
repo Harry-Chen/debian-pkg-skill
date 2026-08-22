@@ -25,13 +25,6 @@ Split these out when enough concrete tasks accumulate:
 - `references/rust.md`: debcargo, crate updates, vendoring, feature flags.
 - `references/go.md`: dh-golang, Built-Using, vendoring, module paths.
 - `references/c-library.md`: symbols files, shlibs, Multi-Arch, transitions.
+- `references/debhelper.md`: dh sequences, compat levels, override targets, dh-sequence addons, debputy.
 - `references/kernel.md`: DKMS, module signing, linux-support packages.
 - `references/debusine.md`: concrete CLI/API workflows once local credentials and usage patterns are known.
-
-## Maintainer Heuristics
-
-- Prefer archive consistency over upstream convenience.
-- Prefer testable minimal diffs over broad modernization.
-- Preserve team-maintained style even if another style is personally preferred.
-- Make networked or privileged operations explicit.
-- Keep external service links in the final summary when they informed the work.

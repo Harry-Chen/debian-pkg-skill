@@ -1,0 +1,85 @@
+# Local Maintainer Defaults
+
+Template for `LOCAL.md`. Copy it, fill it in, and keep it untracked:
+
+```bash
+cp LOCAL.md.example LOCAL.md
+```
+
+`LOCAL.md` records *one maintainer's environment* — the concrete commands and
+paths an agent cannot guess from the package repository alone. `SKILL.md` and
+the `references/` stay neutral so they can be shared; everything personal
+belongs here. `.gitignore` keeps `LOCAL.md` out of git so forks do not carry
+each other's build environment.
+
+Delete the sections that do not apply. Keep entries short and concrete: exact
+commands, exact paths. Prefer stating what an agent would otherwise get wrong.
+
+## Builder
+
+Name the builder and give the exact invocation, because the skill deliberately
+does not assume one. Common shapes:
+
+```bash
+# gbp driving pbuilder
+gbp buildpackage --git-pbuilder --git-arch=<arch> --git-dist=<suite>
+
+# sbuild
+sbuild -d <suite> --arch=<arch>
+
+# pbuilder directly, from a source package
+pbuilder build ../<source>_<version>.dsc
+
+# a personal wrapper script
+<wrapper> <suite> <arch> build ../<source>_<version>.dsc
+```
+
+Record the things that change follow-up commands:
+
+- Where `.changes`, `.deb`, and `.buildinfo` files land (`..` for
+  `dpkg-buildpackage`/gbp, a per-suite result directory for most chroot
+  builders). `lintian`, `debdiff`, `debc`, and `dput` all need this path.
+- Whether the builder writes its own log, and where. If it does, do not wrap
+  it in an extra `tee`.
+- Which operations need `sudo`, network, or writes outside the workspace
+  (typically chroot create/update) so they can be confirmed first.
+
+## Default architecture and suite
+
+- Architecture: `<arch>` (e.g. `amd64`).
+- Suite: `<suite>` (e.g. `sid` — equivalent to `unstable`; preserve the
+  spelling actually used in commands when documenting or rerunning).
+
+## Chroot and mirror configuration
+
+- Chroot names/locations, and how they are created and refreshed.
+- The mirror or caching proxy these chroots use, if it is not the system
+  default.
+
+## gbp usage
+
+State which parts of the workflow go through `gbp` (`gbp dch`,
+`gbp import-orig`, `gbp pq import/export`, `gbp tag`) and, if the builder is
+not `gbp buildpackage`, say so explicitly so an agent does not fall back to it.
+
+## Commit and release-changelog timing
+
+Record when the release changelog entry is committed: before the upload, or
+delayed until it succeeds. The mechanics — and the `--git-ignore-new` build a
+delayed commit implies — are in `references/workflows.md` (*Commit Before
+Changelog Generation*); this file only records which rule applies here.
+
+## Upload targets
+
+- QA / intermediate uploads: e.g. `dput debusine.debian.net <changes>`.
+- Archive uploads: name the profile, and whether an agent may ever run it
+  without an explicit instruction (usually not).
+
+Generic `dput` safety rules live in `references/tools.md` (Upload Helpers) and
+the archive-vs-debusine distinction in `references/services.md`; this file only
+records *which* targets are used here.
+
+## Anything else an agent would guess wrong
+
+Signing keys, identity used for NMUs, packages with unusual local conventions,
+directories to stay out of, network restrictions.

@@ -1,51 +1,17 @@
 # Debian Packaging Workflows
 
-## Upstream Source Boundary
-
-Default to reading Debian packaging files, not upstream source. The maintainer is packaging upstream software, so upstream codebase instructions are usually not authoritative for Debian packaging work.
-
-Do not read these files/directories unless directly relevant to the packaging task:
-
-- `.claude`
-- `.codex`
-- `AGENTS.md`
-- other agent/developer instruction files for upstream contributors
-- broad upstream documentation unrelated to packaging
-
-Read upstream source only for a concrete reason:
-
-- creating or refreshing a quilt patch
-- investigating FTBFS or autopkgtest failures
-- checking installed files, generated artifacts, or build-system behavior
-- reviewing copyright/license changes during upstream updates
-- understanding an upstream API/ABI change that affects Debian metadata
-
-When upstream reading is needed, use the smallest scope that can answer the question. Prefer targeted `rg`, build logs, patch context, and exact failing paths over broad recursive reads.
+The upstream-source boundary — when to read upstream code rather than just `debian/`, and which upstream agent-instruction files to skip — is part of the operating model in `SKILL.md`. Re-read it before any workflow that might pull you into the upstream tree.
 
 ## Bug Fix In Debian Packaging
 
 1. Read the BTS report, package tracker, and Salsa MRs/issues.
 2. Reproduce locally if possible with the package's normal build/test path.
 3. Decide whether the fix belongs in Debian packaging, upstream source, dependencies, or tests.
-4. For upstream source in `3.0 (quilt)`, add or update a quilt patch with DEP-3 headers.
+4. For upstream source in `3.0 (quilt)`, add or update a quilt patch. If the fix already exists upstream, import that commit and keep its `git format-patch` header; otherwise write a DEP-3 header (see `policy.md`).
 5. Update `debian/changelog` with a concise entry and `Closes: #NNNNNN` if appropriate.
 6. Run focused validation, then full build/autopkgtest if the fix affects runtime behavior.
 
-For quilt patches, use this default sequence:
-
-```bash
-quilt push -a
-quilt new fix-specific-issue.patch
-quilt add path/to/file
-editor path/to/file
-quilt diff
-quilt refresh
-quilt header -e
-quilt pop -a
-dpkg-source --before-build .
-```
-
-The patch header must explain provenance and forwarding state. Use `Forwarded: not-needed` only for genuinely Debian-specific changes; otherwise use `Forwarded: no` until the patch is sent upstream.
+The quilt sequences — new patch, editing an existing one, importing an upstream commit — are in `tools.md` (*quilt And Patch Queues*). For a patch written in Debian, state the forwarding position honestly: `Forwarded: not-needed` only for genuinely Debian-specific changes, otherwise `Forwarded: no` until the patch is actually sent upstream.
 
 ## New Upstream Release
 
@@ -69,7 +35,9 @@ quilt refresh
 quilt pop -a
 gbp dch
 editor debian/changelog
-gbp buildpackage --git-pbuilder --git-arch=amd64 --git-dist=sid
+dpkg-buildpackage -S -us -uc
+# then a clean-chroot build of the resulting .dsc with the local builder
+# (gbp --git-pbuilder, sbuild, pdebuild, or a wrapper — see LOCAL.md)
 ```
 
 Drop `--pristine-tar` only when the repository does not use pristine-tar.
@@ -104,7 +72,17 @@ Suggested commit granularity:
 - one commit for symbols/install/rules metadata updates
 - one release commit for final `gbp dch`/upload changelog state when repository practice uses it
 
-For this user, commit non-changelog changes promptly so `gbp dch` has useful input, but usually delay the final release changelog commit until after the upload succeeds. A pre-upload build may therefore have exactly one uncommitted file, `debian/changelog`, with distribution already set to `unstable`; in that case build with `--git-ignore-new` rather than committing the release entry prematurely.
+Commit timing for the release changelog entry varies by maintainer: some commit it before the upload, others delay it until the upload succeeds so the version is never claimed twice. When it is delayed, a pre-upload build legitimately has exactly one uncommitted file, `debian/changelog`, with the distribution already set — build with `--git-ignore-new` (or the builder's equivalent) rather than committing the release entry prematurely. `LOCAL.md` records the local rule.
+
+## Workspace Hygiene
+
+Debian builds legitimately write outside the source tree: `dpkg-buildpackage` leaves `.dsc`, `.changes`, `.buildinfo`, and binaries in the parent directory, and chroot builders use their own result and log directories. That is expected output — do not clean the parent directory, and do not redirect build output elsewhere unless asked.
+
+Everything you generate yourself is different. Scratch notes, upstream patches downloaded before they become `debian/patches/*`, diff dumps, and log excerpts belong in a git-ignored scratch directory inside the workspace, not in the parent directory next to the build artifacts, not under `debian/`, and not in `/tmp` where the user cannot see them. Delete them when the task ends, and never let one reach a commit.
+
+Before committing, check `git status --short` for scratch files, editor backups, `.pc/`, and build leftovers. If the repository lacks a `.gitignore` entry that would have caught a recurring artifact, propose adding one rather than deleting the file every time.
+
+Rewriting history is limited to what is still private: local commits not yet pushed and not yet part of a release tag. Squashing or reordering those before `gbp dch` is fine; touching shared history is not, and neither is amending a commit that already exists — add a new one instead.
 
 ## NMU
 
@@ -115,6 +93,27 @@ Non-maintainer uploads require extra care.
 3. Use NMU versioning, usually `+nmu1` for non-native packages.
 4. Include changelog entries that clearly identify the fixed bug.
 5. Respect DELAYED queue conventions unless an immediate upload is justified.
+
+## Backport
+
+A backport rebuilds the version in testing for users of a stable suite,
+published in `<codename>-backports`. Read the backports team's contributor
+rules at https://backports.debian.org/ before a first upload; the first upload
+of a source package to a backports suite passes through its NEW queue.
+
+1. Start from the exact source that is in testing — a backport tracks testing,
+   not unstable. Confirm what each suite carries with `rmadison <src>`.
+2. Change as little as possible: ideally only the changelog entry, plus the
+   minimum needed to build and run on the target release (adjusted
+   dependencies, lowered debhelper compat). No new features relative to
+   testing.
+3. Version with `dch --bpo`: it appends the `~bpo<N>+<M>` suffix, which sorts
+   below the testing version so the package upgrades cleanly on the next
+   release, and sets the distribution to `<codename>-backports`.
+4. Build against stable plus stable-backports only; the chroot must not pull
+   build dependencies from testing or unstable.
+5. Validate with the normal ladder and upload with an explicit profile and
+   `.changes` file. Keep rebasing later uploads onto the version in testing.
 
 ## FTBFS
 
@@ -141,6 +140,8 @@ Compiler/toolchain fixes often belong upstream. If the patch is backported from 
 3. Avoid breaking coinstallability or multiarch metadata.
 4. Consider binNMUs and transition tracker state before upload.
 
+Useful tools: `build-rdeps` (see `tools.md`), `dose-builddebcheck`, `ben`, and the release team's transition tracker.
+
 ## Pre-Upload Checklist
 
 Run or explicitly defer:
@@ -149,18 +150,15 @@ Run or explicitly defer:
 git status --short
 dpkg-parsechangelog
 gbp config dump
-gbp buildpackage --git-pbuilder --git-arch=amd64 --git-dist=sid --git-ignore-new
-lintian ../*.changes
-autopkgtest ../*.dsc -- <backend>
+dpkg-buildpackage -S -us -uc
+<clean-chroot build of ../<source>_<version>.dsc>    # local builder; see LOCAL.md
+lintian <result-dir>/<source>_<version>_<arch>.changes
+autopkgtest ../<source>_<version>.dsc -- <backend>
 ```
 
-For long-running build commands, write logs to:
+Builders differ in where they leave `.changes`, `.deb`, and `.buildinfo` files: `dpkg-buildpackage` and gbp use `..`, while most chroot wrappers use their own result directory. Resolve that path before running `lintian`, `debdiff`, `debc`, or `dput`.
 
-```text
-~/Workspace/build-logs/<source>/<source>-<version>-<arch>-<dist>-<YYYYmmdd-HHMMSS>.log
-```
-
-Use `set -o pipefail` when piping through `tee` so build failures are not hidden by the pipeline.
+Check whether the builder already writes a timestamped log of its own before piping through `tee`. When you do add a `tee`, use `set -o pipefail` so build failures are not hidden by the pipeline.
 
 Check:
 

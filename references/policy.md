@@ -25,7 +25,7 @@ When packaging behavior is uncertain:
 - `debian/rules`: debhelper compat style, build system override hooks, hardening, generated artifacts.
 - `debian/source/format`: usually `3.0 (quilt)` for non-native packages.
 - `debian/copyright`: copyright format, Files stanzas, license text, upstream metadata.
-- `debian/patches/`: quilt patch stack, DEP-3 headers, forwarding state.
+- `debian/patches/`: quilt patch stack, header style (preserved upstream commits vs. DEP-3), forwarding state.
 - `debian/tests/`: autopkgtest control and test scripts.
 - `debian/watch`: upstream release monitoring through uscan.
 
@@ -108,7 +108,40 @@ Check these fields before upload-prep:
 
 ## Source Format And Patches
 
-For `3.0 (quilt)`, keep upstream source changes as quilt patches under `debian/patches/`, not as direct edits to upstream files. Include DEP-3 patch headers when adding or materially changing a patch:
+For `3.0 (quilt)`, keep upstream source changes as quilt patches under `debian/patches/`, not as direct edits to upstream files.
+
+Every patch needs a header that explains what it does and where it came from. Which *kind* of header depends on whether the change exists upstream as a commit.
+
+### Prefer a preserved upstream cherry-pick
+
+When the change already exists as an upstream commit, ship that commit as `git format-patch` produced it. Do not reformat it into a hand-written DEP-3 header. Keep the `From <hash> Mon Sep 17 00:00:00 2001` line, `From:`, `Date:`, `Subject:`, the commit message body, and the `---` separator before the diff.
+
+This is not a deviation from DEP-3. The spec defines `Subject` as an alias for `Description` and `From` as an alias for `Author` precisely so that `git format-patch` output is already a valid patch header.
+
+Why the upstream form is worth preserving:
+
+- The file stays comparable with `git show <hash>` in the upstream repository, so provenance is verifiable in one command instead of trusted from a hand-copied `Origin:` URL.
+- Re-importing the same commit later — new upstream release, a second suite, a different maintainer — reproduces the same file, so the diff is empty rather than noisy.
+- Nothing has to be maintained by hand. A hand-written `Description:` drifts from the commit message it paraphrases, and `Last-Update:` goes stale on every refresh.
+
+Two edits to the upstream output are expected and fine:
+
+- Correcting `--- a/…` / `+++ b/…` paths when upstream moved the file after the release being patched.
+- Tightening `@@` hunk line numbers so the patch applies without offsets.
+
+`gbp pq export` already emits this shape from the patch-queue branch; prefer it over hand-assembling patch files when the repository uses `gbp pq`.
+
+If the package's practice is to record Debian-side context on every patch, append the extra fields to the header block instead of rewriting it, and only for facts the commit does not already carry — `Bug-Debian:` is worth adding, `Origin:`/`Forwarded:` are redundant for something demonstrably already upstream.
+
+### Write a DEP-3 header when there is no upstream commit
+
+Use a full DEP-3 header for patches that do not correspond to an upstream commit:
+
+- Debian-specific changes with no upstream counterpart (`Forwarded: not-needed`).
+- Patches created in Debian and not yet sent upstream (`Forwarded: no`).
+- Hand-recreated backports, where the upstream diff does not apply because the surrounding code was refactored. Describe the divergence in a `Note:` paragraph — that is information the upstream commit cannot carry.
+
+Fields:
 
 - `Description` or `Subject`: required short purpose; add a longer rationale when needed.
 - `Origin`: required unless `Author` is present; use `upstream`, `backport`, `vendor`, or `other` prefixes when useful.
@@ -118,8 +151,6 @@ For `3.0 (quilt)`, keep upstream source changes as quilt patches under `debian/p
 - `Reviewed-by` or `Acked-by`: reviewer identity when available.
 - `Last-Update`: ISO date, `YYYY-MM-DD`.
 - `Applied-Upstream`: version, URL, or commit where upstream accepted it.
-
-Use `quilt`, `gbp pq`, or the repository's existing patch workflow. Do not mix workflows casually.
 
 Minimal DEP-3 header for a Debian-created patch:
 
@@ -133,7 +164,22 @@ Forwarded: no
 Last-Update: YYYY-MM-DD
 ```
 
-For a cherry-pick or backport from upstream, prefer `Origin: upstream, <url>` or `Origin: backport, <url>` and include `Bug`/`Applied-Upstream` when known.
+For a backport that had to be rewritten rather than cherry-picked, keep the upstream attribution and state what differs:
+
+```text
+From: <upstream author of the equivalent commit>
+Subject: <descriptive backport title>
+
+<what the fix does>
+
+Origin: backport, <upstream commit URL>
+Bug: <upstream tracker URL>
+Bug-Debian: https://bugs.debian.org/NNNNNN
+Forwarded: not-needed
+Note: <how this differs from upstream — file renamed, helper inlined, …>
+```
+
+Use `quilt`, `gbp pq`, or the repository's existing patch workflow. Do not mix workflows casually.
 
 ## Copyright
 

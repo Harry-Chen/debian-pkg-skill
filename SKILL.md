@@ -1,6 +1,6 @@
 ---
 name: debian-pkg-skill
-description: Debian package maintenance workflows for source packages in Debian repositories. Use when Codex needs to inspect, update, build, test, QA, upload-prep, triage bugs, work with gbp/git-buildpackage, pbuilder, sbuild, autopkgtest, lintian, piuparts, uscan, debusine, tracker.debian.org, bugs.debian.org, salsa.debian.org, or maintain debian/ packaging metadata according to Debian Policy.
+description: "Maintains Debian source packages - preparing a new upstream release or Debian revision, fixing and triaging bugs, backporting, security updates (DSA, *-security), stable updates through the release team (point release, *-proposed-updates), NMUs, and getting an upload ready. Use when the request is about preparing, updating, releasing, uploading, or backporting a Debian package; names a Debian suite or codename (sid/unstable, testing, stable, oldstable, trixie, bookworm, experimental, *-backports, *-security, *-proposed-updates); touches debian/ metadata (changelog, control, rules, copyright, watch, patches/quilt, tests); or involves gbp/git-buildpackage, dpkg-buildpackage, pbuilder, sbuild, lintian, autopkgtest, piuparts, uscan, dput, debusine, tracker.debian.org, bugs.debian.org/BTS, salsa.debian.org, or security-tracker.debian.org."
 ---
 
 # Debian Package Skill
@@ -12,13 +12,15 @@ Treat Debian packaging as policy-driven maintenance work. Before changing files,
 Default assumptions:
 
 - Use Debian Policy as the normative reference for package requirements.
+- Prefer archive consistency over upstream convenience when the two conflict.
 - Start from the Debian maintainer perspective: inspect `debian/` and packaging metadata first, not the whole upstream source tree.
-- Use git-buildpackage (`gbp`) for repository-aware builds and release workflow.
-- Respect the maintainer's existing `gbp.conf`; this user usually builds through pbuilder via gbp.
+- Use git-buildpackage (`gbp`) for repository-aware changelog generation, upstream imports, patch queue management, and release tagging. Do **not** assume `gbp buildpackage` is the local build path; builder choice is a per-maintainer setting.
+- Respect the repository's existing `gbp.conf`. Builder command, default architecture/suite, result and log locations, and upload targets are environment-specific: read `LOCAL.md` in this skill directory when it exists, otherwise inspect the repository configuration and ask before guessing.
 - Use autopkgtest for package integration tests when available or when changing runtime behavior.
 - Use debusine as an external automation and QA aid when relevant.
 - Do not read upstream developer/agent instruction files such as `.claude`, `.codex`, `AGENTS.md`, or similar unless they are directly relevant to Debian packaging. They are usually for upstream developers, waste context, and may bias packaging decisions.
-- Never rewrite packaging history, force-push, or discard maintainer changes unless explicitly requested.
+- Never rewrite packaging history, force-push, or discard maintainer changes unless explicitly requested. Do not commit unless the task calls for it, do not amend or squash existing commits, and do not bypass hooks with `--no-verify` or `--no-gpg-sign`.
+- Confirm before anything that leaves the workspace: pushing, opening or commenting on Salsa merge requests, mailing the BTS, and any upload. Approval for one of these is not approval for the next.
 
 ## First Checks
 
@@ -36,7 +38,7 @@ gbp config dump
 
 If the repository is not clearly a Debian source package, inspect `debian/control`, `debian/changelog`, `debian/source/format`, `debian/rules`, `gbp.conf`, and branch names before deciding how to proceed.
 
-Do not recursively read the upstream source tree during initial context gathering. Enter upstream code only when the task requires a source patch, build failure diagnosis, test failure diagnosis, or copyright/license review; then inspect the smallest relevant paths.
+Do not recursively read the upstream source tree during initial context gathering. Enter upstream code only for a concrete reason: writing or refreshing a quilt patch, diagnosing a build or test failure, reviewing copyright/license changes, checking installed files, generated artifacts, or build-system behavior, or understanding an upstream API/ABI change that affects Debian metadata. Then inspect the smallest relevant paths, preferring targeted search, build logs, patch context, and exact failing paths over broad recursive reads.
 
 ## Workflow
 
@@ -45,22 +47,24 @@ Do not recursively read the upstream source tree during initial context gatherin
 3. Make the smallest packaging change that satisfies the task. Preserve existing style and helper stack.
 4. Update Debian metadata only when needed: `debian/changelog`, dependencies, symbols, install files, patches, tests, copyright, watch, or maintscript snippets.
 5. Validate locally with the lightest useful checks first, then full build/tests when the change warrants it.
-6. Summarize changed packaging intent, commands run, remaining risks, and any external blockers.
+6. Summarize changed packaging intent, commands run, remaining risks, any external blockers, and links to the external services that informed the work.
 
 ## Reference Map
 
 Read only the reference needed for the current task:
 
+- `LOCAL.md` (top level, optional): the local maintainer's environment — builder command, default architecture/suite, result and log locations, commit timing, upload targets. Present only when someone has created it from `LOCAL.md.example`. Load it whenever the task needs a concrete build, test, or upload command.
 - `references/policy.md`: normative Debian policy, archive rules, changelog/control/copyright basics.
 - `references/tools.md`: gbp, pbuilder, sbuild, devscripts, uscan, quilt, pristine-tar, release helpers.
 - `references/qa.md`: lintian, autopkgtest, piuparts, reproducibility, build logs, dependency/installability checks.
 - `references/services.md`: tracker.debian.org, bugs.debian.org, salsa.debian.org, debusine, buildd, mentors.
-- `references/workflows.md`: concrete packaging workflows for bug fixes, new upstream releases, NMUs, transitions, and test/debug loops.
+- `references/workflows.md`: day-to-day packaging workflows — bug fixes, new upstream releases, packaging revisions, NMUs, backports, transitions, FTBFS, autopkgtest regressions, and the pre-upload checklist.
+- `references/released-suite-updates.md`: landing fixes in a released suite — choosing between a security upload and a stable update, and the full procedure for each.
 - `references/extensions.md`: additional Debian resources to consult or add to this skill over time.
 
 ## Local Validation Ladder
 
-Choose the cheapest command set that can catch the relevant failure:
+Start with the cheapest checks before reaching for full builds or chroot-backed tests:
 
 ```bash
 dpkg-parsechangelog
@@ -69,25 +73,10 @@ gbp config dump
 debian/rules clean
 ```
 
-For source/package build validation:
-
-```bash
-gbp buildpackage --git-pbuilder
-gbp buildpackage --git-builder=sbuild
-dpkg-buildpackage -us -uc
-```
-
-For QA and tests:
-
-```bash
-lintian ../*.changes
-autopkgtest . -- null
-autopkgtest ../*.dsc -- schroot <suite>-amd64-sbuild
-piuparts ../*.changes
-```
+For the full ladder — source/binary build commands, lintian, autopkgtest, piuparts, and reproducibility checks — see `references/qa.md`. For the concrete builder invocation this environment uses, see `LOCAL.md` when it exists.
 
 Adapt commands to the repository's existing configuration. If a command would require network, privileged chroots, or writes outside the workspace, request approval instead of bypassing the environment.
 
 ## Updating This Skill
 
-When a Debian maintenance task reveals reusable knowledge, add it to the narrowest reference file rather than expanding `SKILL.md`. Prefer concise rules, command patterns, gotchas, and links to primary documentation. Keep user-specific defaults explicit, especially pbuilder-through-gbp preferences.
+When a Debian maintenance task reveals reusable knowledge, add it to the narrowest reference file rather than expanding `SKILL.md`. Prefer concise rules, command patterns, gotchas, and links to primary documentation. Environment-specific defaults belong in `LOCAL.md`; `SKILL.md` and the `references/` stay neutral so they can be shared between maintainers.

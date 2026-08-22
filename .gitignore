@@ -1,0 +1,6 @@
+# Maintainer-specific defaults: copy LOCAL.md.example to LOCAL.md and edit it.
+# Kept untracked so forks do not carry each other's build environment.
+/LOCAL.md
+
+# Agent scratch space, per the workspace-hygiene convention in the workflows.
+/.tmp/

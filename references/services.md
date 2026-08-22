@@ -42,7 +42,7 @@ https://bugs.debian.org/<bug-number>
 https://bugs.debian.org/src:<source-package>
 ```
 
-For changelog closures, use `Closes: #NNNNNN`. For complicated bug state, prefer explaining the intended BTS control action rather than pretending it happened.
+For changelog closures, use `Closes: #NNNNNN`.
 
 When the user mentions a bug number, verify it in BTS before changing code or changelog:
 
@@ -68,6 +68,24 @@ Common BTS concepts:
 - affects, blocks, blocked-by
 - found/fixed versions
 - usertags for teams
+
+Triage state changes go by mail to `control@bugs.debian.org`, or as `Control:`
+pseudo-headers at the top of a reply to `NNNNNN@bugs.debian.org`. Common
+commands:
+
+```text
+severity NNNNNN important
+tags NNNNNN + moreinfo upstream
+reassign NNNNNN <package> <version>
+forwarded NNNNNN <upstream-bug-url>
+found NNNNNN <version>
+fixed NNNNNN <version>
+merge NNNNNN MMMMMM
+```
+
+Mailing the BTS leaves the workspace — confirm first (see `SKILL.md`). When
+not asked to send, state the intended control commands in the summary rather
+than pretending they happened.
 
 ## Salsa
 
@@ -100,8 +118,7 @@ If debusine CLI/API credentials are not configured, use the web links and ask be
 Debusine upload safety:
 
 - Debusine may accept unsigned or intermediate work-in-progress source uploads for CI/QA assistance; treat this as different from uploading to the Debian archive.
-- Use explicit upload commands only, for example `dput debusine.debian.net <source.changes>`.
-- Never run bare `dput`, bare `dupload`, or version-probing commands that may default to an archive profile and infer the latest `.changes` file.
+- The `dput` rules in `tools.md` (*Upload Helpers*) apply: explicit profile, explicit `.changes` file, never a bare or probing invocation.
 - Before uploading, print or inspect the `.changes` file enough to verify source, version, distribution, changed-by, and file list.
 - Preserve the created artifact/work-request URLs in the final summary.
 
