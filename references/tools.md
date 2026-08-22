@@ -15,6 +15,19 @@ Primary sources:
 - dput: https://manpages.debian.org/unstable/dput/dput.1.en.html
 - quilt: https://manpages.debian.org/unstable/quilt/quilt.1.en.html
 
+## Tool Environment
+
+Several packaging tools take defaults from the environment, and maintainers commonly export them from a shell profile or `~/.quiltrc`. Check what is already set before prefixing a command with your own values:
+
+```bash
+printenv QUILT_PATCHES QUILT_REFRESH_ARGS DEBEMAIL DEBFULLNAME DEB_BUILD_OPTIONS
+```
+
+- `QUILT_PATCHES` — must be `debian/patches` for Debian source packages. It can also come from `~/.quiltrc` or, once a series has been pushed, `.pc/.quilt_patches`. If any of those is already correct, run `quilt` bare instead of prefixing every invocation; setting it wrongly creates a second patch stack in the wrong directory.
+- `QUILT_REFRESH_ARGS` — commonly `-p ab --no-timestamps --no-index` so refreshes do not add timestamp and index noise to every patch.
+- `DEBEMAIL` / `DEBFULLNAME` — identity used by `dch`, `gbp dch`, and the changelog trailer. Do not override them unless the task explicitly calls for a different identity.
+- `DEB_BUILD_OPTIONS` — e.g. `parallel=N`, `nocheck`, `noopt`. Builder wrappers often set this already; adding your own value can silently disable the build-time test suite.
+
 ## gbp
 
 Use `gbp` as the default repository-aware entrypoint. Always inspect existing config before assuming branch names, tags, builder, pristine-tar, or tarball location:
@@ -84,6 +97,20 @@ pdebuild
 ```
 
 Use direct pbuilder only if gbp integration is not available or the user asks for it.
+
+## Chroot Mirrors
+
+Chroot creation, chroot updates, and test builds should use the mirror the system is already configured with, not a hardcoded URL. Read it from the existing configuration first:
+
+```bash
+grep -rhE '^(deb |URIs:)' /etc/apt/sources.list /etc/apt/sources.list.d/
+grep -hE 'MIRRORSITE|OTHERMIRROR|APTCACHE' ~/.pbuilderrc /etc/pbuilderrc
+grep -hiE 'mirror|distribution' ~/.sbuildrc
+```
+
+A non-default mirror is usually configured for a reason: bandwidth, a caching proxy such as apt-cacher-ng, or an internal archive carrying packages the public mirrors do not have. Overriding it silently wastes the cache at best and produces an unreproducible chroot at worst.
+
+Fall back to `https://deb.debian.org/debian` only when the configured mirror is unreachable, stale, or missing the suite you need — and say which mirror was used and why.
 
 ## uscan And Upstream Imports
 
@@ -163,6 +190,7 @@ Use whichever model the repository already uses. When adding patches, include DE
 
 Quilt rules that avoid corrupt patch stacks:
 
+- Confirm `QUILT_PATCHES` resolves to `debian/patches` (see *Tool Environment*) before creating a patch; do not reflexively prefix every command with it.
 - Push all patches before editing if the change depends on current patched source.
 - Use `quilt add` before modifying each file so the patch records the correct delta.
 - Use `quilt refresh` only for the intended top patch; check `quilt top` first.
