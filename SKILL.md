@@ -36,7 +36,7 @@ gbp config dump
 
 If the repository is not clearly a Debian source package, inspect `debian/control`, `debian/changelog`, `debian/source/format`, `debian/rules`, `gbp.conf`, and branch names before deciding how to proceed.
 
-Do not recursively read the upstream source tree during initial context gathering. Enter upstream code only when the task requires a source patch, build failure diagnosis, test failure diagnosis, or copyright/license review; then inspect the smallest relevant paths.
+Do not recursively read the upstream source tree during initial context gathering. Enter upstream code only for a concrete reason: writing or refreshing a quilt patch, diagnosing a build or test failure, reviewing copyright/license changes, checking installed files, generated artifacts, or build-system behavior, or understanding an upstream API/ABI change that affects Debian metadata. Then inspect the smallest relevant paths, preferring targeted search, build logs, patch context, and exact failing paths over broad recursive reads.
 
 ## Workflow
 
