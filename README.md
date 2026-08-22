@@ -26,8 +26,8 @@ and habits.
   - `services.md` — tracker.d.o, BTS, Salsa, Debusine, buildd, mentors.
   - `workflows.md` — bug fixes, new upstream releases, NMUs, transitions,
     FTBFS, pre-upload checklist.
-  - `released-suite-updates.md` — the security update workflow for released
-    suites.
+  - `released-suite-updates.md` — routing and procedure for security uploads
+    and stable updates to released suites.
   - `extensions.md` — pointers and candidate future reference files.
 - `agents/` — harness-specific install metadata (see below).
 - `scripts/` — placeholder for any helper scripts the skill grows over time.

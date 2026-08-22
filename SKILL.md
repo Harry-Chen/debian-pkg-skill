@@ -1,6 +1,6 @@
 ---
 name: debian-pkg-skill
-description: Debian package maintenance workflows for source packages in Debian repositories. Use when the agent needs to inspect, update, build, test, QA, upload-prep, triage bugs, work with gbp/git-buildpackage, pbuilder, sbuild, autopkgtest, lintian, piuparts, uscan, debusine, tracker.debian.org, bugs.debian.org, salsa.debian.org, or maintain debian/ packaging metadata according to Debian Policy.
+description: Maintains Debian source packages - preparing a new upstream release or Debian revision, fixing and triaging bugs, backporting, security updates (DSA, *-security), stable updates through the release team (point release, *-proposed-updates), NMUs, and getting an upload ready. Use when the request is about preparing, updating, releasing, uploading, or backporting a Debian package; names a Debian suite or codename (sid/unstable, testing, stable, oldstable, trixie, bookworm, experimental, *-backports, *-security, *-proposed-updates); touches debian/ metadata (changelog, control, rules, copyright, watch, patches/quilt, tests); or involves gbp/git-buildpackage, dpkg-buildpackage, pbuilder, sbuild, lintian, autopkgtest, piuparts, uscan, dput, debusine, tracker.debian.org, bugs.debian.org/BTS, salsa.debian.org, or security-tracker.debian.org.
 ---
 
 # Debian Package Skill
@@ -58,7 +58,7 @@ Read only the reference needed for the current task:
 - `references/qa.md`: lintian, autopkgtest, piuparts, reproducibility, build logs, dependency/installability checks.
 - `references/services.md`: tracker.debian.org, bugs.debian.org, salsa.debian.org, debusine, buildd, mentors.
 - `references/workflows.md`: day-to-day packaging workflows — bug fixes, new upstream releases, packaging revisions, NMUs, transitions, FTBFS, autopkgtest regressions, and the pre-upload checklist.
-- `references/released-suite-updates.md`: the security update workflow for released suites — tracker triage, patch sourcing and adaptation, and the security changelog shape.
+- `references/released-suite-updates.md`: landing fixes in a released suite — choosing between a security upload and a stable update, and the full procedure for each.
 - `references/extensions.md`: additional Debian resources to consult or add to this skill over time.
 
 ## Local Validation Ladder

@@ -1,12 +1,76 @@
 # Updates To Released Suites
 
-Landing a security fix in a released Debian suite through the Security Team.
-The upstream-source boundary rules in `SKILL.md` apply here too — this
-workflow routinely enters the upstream repository to locate fix commits.
+Landing a fix in a released Debian suite: choosing between a security upload
+and a stable update, then the full procedure for each. The upstream-source
+boundary rules in `SKILL.md` apply here too — the security workflow routinely
+enters the upstream repository to locate fix commits.
+
+## Choosing The Route
+
+"Prepare an update for `<codename>`" is ambiguous. A fix reaches a released
+suite one of two ways, run by different teams: a security upload through the
+Security Team, or a stable update through the release team, landing at the next
+point release.
+
+The two differ in urgency and procedure, not in subject matter. A stable update
+is a perfectly valid way to fix a security issue — it is simply the unhurried
+one. Treat the choice as "how urgent is this", not "is this a security issue".
+
+Settle it before touching `debian/changelog`: it decides the distribution
+field, the approval step, and who uploads.
+
+Signals in the request:
+
+- CVEs, "security issues", a security-tracker link, an embargoed report, or a
+  pending DSA — **security route**.
+- "point release", "proposed-updates", "pu bug", the release team, or a plain
+  bug too serious to wait for the next Debian release — **stable route**.
+- Just "an update for `<codename>`" — decide from the issues themselves, then
+  confirm with the user before writing the changelog.
+
+Deciding from the issues, when the request does not say. Open
+`https://security-tracker.debian.org/tracker/source-package/<src>` and read the
+flags. They rank how much a fix is worth, not which route it must take:
+
+- **Vulnerable, unflagged** — DSA candidates. These are what justifies an
+  out-of-band update pushed to every stable user; coordinate with the Security
+  Team.
+- **`no-dsa`** ("Minor issue", "Postponed") — a real issue, just not enough on
+  its own to justify that.
+- **`<unimportant>`** — handled much the same in practice. The marker describes
+  the issue's impact rather than a per-suite decision (typically no privilege
+  boundary is crossed), but like `no-dsa` it means "no update for this alone",
+  not "leave it broken".
+- **`<ignored>`** — will not be fixed in that suite. This is the marker for a
+  decision not to act, and unlike the two above it is not an invitation to fix
+  opportunistically.
+- **Non-security bugs** never justify a security upload, whatever their
+  severity.
+
+What follows from the mix, for a given suite:
+
+- Something unflagged is open — security upload, and sweep the `no-dsa` and
+  `<unimportant>` issues into the same one. One upload fixing everything known
+  beats leaving the lesser ones open for months.
+- Nothing unflagged is open — no DSA, but the lesser issues are still worth
+  fixing. Carry them through a stable update, on your own schedule, and they
+  reach users at the next point release.
+
+True for both routes:
+
+- The fix must already be in unstable, and ideally migrated to testing, so the
+  next upgrade does not reintroduce the bug. If it is not, fix unstable first.
+- The version suffix is `+deb<N>u<M>` in both cases — `N` is the Debian release
+  number (13 for trixie, 12 for bookworm) and `M` continues from whatever the
+  suite already carries. Check with `rmadison <src>` instead of assuming `u1`;
+  a security upload and a stable update share the same counter.
+- Keep the diff minimal and targeted. Neither team accepts refactors, new
+  features, or an upstream version bump as part of an update.
 
 ## Security Update
 
-Port a published fix into one or more released suites. Goal: the smallest
+Route for issues the Security Team will cover with a DSA. Port a published fix
+into one or more released suites. Goal: the smallest
 verifiable diff that resolves the issue — no refactors, no unrelated cleanups,
 no version bumps. This workflow ends at "patches written, series and changelog
 updated"; build, lintian, autopkgtest, and upload follow the standard
@@ -22,12 +86,11 @@ https://security-tracker.debian.org/tracker/source-package/<src>
 ```
 
 It tabulates every known issue against each suite. The work-list is the rows
-marked **vulnerable** for your target suite(s). `fixed` and `<not-affected>`
-rows need nothing, and `<ignored>` or `<end-of-life>` rows are a decision not
-to fix that suite. Include the rows flagged `no-dsa` or `<unimportant>`:
-neither justifies an upload on its own, but once one is being prepared each
-costs one more patch and leaves nothing known open. Treat the per-CVE detail
-pages as the authoritative description; the overview table truncates.
+marked **vulnerable** for your target suite(s); `fixed`, `<not-affected>`, and
+`<end-of-life>` rows need nothing. The flag semantics — and the rule to sweep
+`no-dsa` and `<unimportant>` rows into the upload being prepared — are in
+*Choosing The Route* above. Treat the per-CVE detail pages as the
+authoritative description; the overview table truncates.
 
 Capture both names each issue may go by:
 
@@ -63,6 +126,10 @@ suites (e.g. trixie-security and bookworm-security). Other suites are opt-in:
 
 A multi-suite confirmation up front avoids redoing the port for the wrong
 tree.
+
+Confirm the issue list too, not just the suites. When the request names
+specific CVEs, check the tracker for other issues open against the same suite
+and offer to sweep them into the upload (*Choosing The Route*).
 
 ### 3. Source the fix
 
@@ -255,3 +322,75 @@ Example shape (with a CVE assigned):
 
  -- <Uploader Name> <email>  <RFC2822 date>
 ```
+
+## Stable Update
+
+Route for fixes that belong in a released suite but do not warrant an
+out-of-band security upload: RC-severity bugs, data loss, important
+regressions, and security issues flagged `no-dsa` or `<unimportant>` when no
+security upload is coming that could carry them — if one is, they belong in it
+instead. Security issues are in scope here; the difference from the security
+route is urgency and procedure, not subject matter. The release team declines
+new upstream
+releases, new features, translation-only churn, and cosmetic fixes — check
+the current stable release policy on `release.debian.org` before investing
+work in a borderline case.
+
+Unlike a security upload, the upload is gated on an explicit ACK: the bug
+comes first, the upload second.
+
+1. **Confirm the fix is already in unstable**, and in testing where the
+   package migrates normally. A stable-only fix that regresses on the next
+   upgrade is the usual reason a request is rejected.
+
+2. **Prepare the minimal diff against the stable source**, not against
+   unstable. Fetch it explicitly rather than assuming the working tree is on
+   the right branch:
+
+   ```bash
+   rmadison <src>                        # what each suite currently carries
+   dget https://deb.debian.org/debian/pool/main/<x>/<src>/<src>_<stable-ver>.dsc
+   ```
+
+3. **Version and distribution.** The distribution is the plain codename;
+   `dak` routes the upload into `<codename>-proposed-updates` itself.
+
+   ```bash
+   dch --newversion <stable-ver>+deb13u1 --distribution trixie
+   # add --force-distribution if dch rejects the suite name
+   ```
+
+   Continue the `u<M>` counter from what the suite already carries — it is
+   shared with any security upload for the same suite.
+
+4. **Produce the debdiff** the release team will review:
+
+   ```bash
+   debdiff <src>_<stable-ver>.dsc <src>_<stable-ver>+deb13u1.dsc > .tmp/pu.debdiff
+   ```
+
+   Read it before sending. It should contain the fix, the changelog entry, and
+   nothing else.
+
+5. **File the `pu` bug against `release.debian.org` and wait for the ACK.**
+
+   ```bash
+   reportbug release.debian.org          # choose the "pu" template
+   ```
+
+   The template sets the usertags the release team filters on and the
+   `pu: package=<src>/<version>` subject. Include the debdiff inline, the
+   rationale for stable users, the bug numbers being fixed, and confirmation
+   that unstable and testing already carry the fix.
+
+6. **Upload only after the ACK.** It lands in `<codename>-proposed-updates`
+   and reaches users with the next point release, so there is no urgency
+   after the upload — do not chase it.
+
+7. **Leave the `pu` bug to the release team**; they track it against the point
+   release. Follow whatever their ACK says rather than closing it from the
+   changelog.
+
+Oldstable takes the same route with its own `pu` bug and a `+deb<N-1>u<M>`
+version. LTS suites do not: they belong to the LTS team and go through
+`dla-needed.txt`, not the SRM.
