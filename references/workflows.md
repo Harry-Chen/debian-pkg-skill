@@ -119,6 +119,8 @@ Compiler/toolchain fixes often belong upstream. If the patch is backported from 
 3. Avoid breaking coinstallability or multiarch metadata.
 4. Consider binNMUs and transition tracker state before upload.
 
+Useful tools: `build-rdeps` (see `tools.md`), `dose-builddebcheck`, `ben`, and the release team's transition tracker.
+
 ## Pre-Upload Checklist
 
 Run or explicitly defer:

@@ -30,7 +30,6 @@ and habits.
     and stable updates to released suites.
   - `extensions.md` — pointers and candidate future reference files.
 - `agents/` — harness-specific install metadata (see below).
-- `scripts/` — placeholder for any helper scripts the skill grows over time.
 
 ## Install
 

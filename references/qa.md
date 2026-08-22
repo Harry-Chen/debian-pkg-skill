@@ -114,19 +114,4 @@ Check reproducibility-sensitive areas:
 
 Use build logs from local builds, buildd, debusine, or reproducible-builds infrastructure to identify environment-specific failures.
 
-## Installability And Transitions
-
-For dependency or library changes, consider:
-
-- reverse dependencies
-- ABI/API changes
-- symbols/shlibs updates
-- binNMU compatibility
-- transitions coordinated with release team
-
-Useful tools/sites:
-
-- `dose-builddebcheck`
-- `ben`
-- `dak rm`/tracker information when available
-- package tracker and release team transition pages
+For installability and transition checks — reverse dependencies, symbols/shlibs, binNMUs — see the *Library Transition* workflow in `workflows.md`.

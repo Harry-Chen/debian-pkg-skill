@@ -12,6 +12,7 @@ Treat Debian packaging as policy-driven maintenance work. Before changing files,
 Default assumptions:
 
 - Use Debian Policy as the normative reference for package requirements.
+- Prefer archive consistency over upstream convenience when the two conflict.
 - Start from the Debian maintainer perspective: inspect `debian/` and packaging metadata first, not the whole upstream source tree.
 - Use git-buildpackage (`gbp`) for repository-aware changelog generation, upstream imports, patch queue management, and release tagging. Do **not** assume `gbp buildpackage` is the local build path; builder choice is a per-maintainer setting.
 - Respect the repository's existing `gbp.conf`. Builder command, default architecture/suite, result and log locations, and upload targets are environment-specific: read `LOCAL.md` in this skill directory when it exists, otherwise inspect the repository configuration and ask before guessing.
@@ -46,7 +47,7 @@ Do not recursively read the upstream source tree during initial context gatherin
 3. Make the smallest packaging change that satisfies the task. Preserve existing style and helper stack.
 4. Update Debian metadata only when needed: `debian/changelog`, dependencies, symbols, install files, patches, tests, copyright, watch, or maintscript snippets.
 5. Validate locally with the lightest useful checks first, then full build/tests when the change warrants it.
-6. Summarize changed packaging intent, commands run, remaining risks, and any external blockers.
+6. Summarize changed packaging intent, commands run, remaining risks, any external blockers, and links to the external services that informed the work.
 
 ## Reference Map
 
