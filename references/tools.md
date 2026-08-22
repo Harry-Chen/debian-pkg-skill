@@ -160,7 +160,7 @@ gbp dch --debian-branch=<branch>
 gbp dch --release
 ```
 
-After running `gbp dch`, always review and edit `debian/changelog`; do not treat generated commit subjects as final changelog text. Add `Closes: #NNNNNN` manually where the release actually closes Debian bugs.
+Editing the draft into release notes — rewriting commit-subject noise, adding `Closes:` — is covered in `policy.md` (*Changelog Rules*).
 
 ## quilt And Patch Queues
 

@@ -11,21 +11,7 @@ The upstream-source boundary — when to read upstream code rather than just `de
 5. Update `debian/changelog` with a concise entry and `Closes: #NNNNNN` if appropriate.
 6. Run focused validation, then full build/autopkgtest if the fix affects runtime behavior.
 
-For quilt patches, use this default sequence:
-
-```bash
-quilt push -a
-quilt new fix-specific-issue.patch
-quilt add path/to/file
-editor path/to/file
-quilt diff
-quilt refresh
-quilt header -e
-quilt pop -a
-dpkg-source --before-build .
-```
-
-That sequence is for a patch written in Debian. Its header must explain provenance and forwarding state: use `Forwarded: not-needed` only for genuinely Debian-specific changes, otherwise `Forwarded: no` until the patch is sent upstream. When the fix instead exists as an upstream commit, `quilt import` it and leave the upstream header alone.
+The quilt sequences — new patch, editing an existing one, importing an upstream commit — are in `tools.md` (*quilt And Patch Queues*). For a patch written in Debian, state the forwarding position honestly: `Forwarded: not-needed` only for genuinely Debian-specific changes, otherwise `Forwarded: no` until the patch is actually sent upstream.
 
 ## New Upstream Release
 

@@ -100,8 +100,7 @@ If debusine CLI/API credentials are not configured, use the web links and ask be
 Debusine upload safety:
 
 - Debusine may accept unsigned or intermediate work-in-progress source uploads for CI/QA assistance; treat this as different from uploading to the Debian archive.
-- Use explicit upload commands only, for example `dput debusine.debian.net <source.changes>`.
-- Never run bare `dput`, bare `dupload`, or version-probing commands that may default to an archive profile and infer the latest `.changes` file.
+- The `dput` rules in `tools.md` (*Upload Helpers*) apply: explicit profile, explicit `.changes` file, never a bare or probing invocation.
 - Before uploading, print or inspect the `.changes` file enough to verify source, version, distribution, changed-by, and file list.
 - Preserve the created artifact/work-request URLs in the final summary.
 
