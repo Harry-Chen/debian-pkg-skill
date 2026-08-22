@@ -186,7 +186,17 @@ gbp pq export
 gbp pq drop
 ```
 
-Use whichever model the repository already uses. When adding patches, include DEP-3 metadata unless the repository's practice is clearly different.
+Use whichever model the repository already uses.
+
+For a fix that exists upstream, import the commit instead of retyping it as a new patch — `quilt import` copies the file into `debian/patches/` and appends it to `series` without touching its contents, which is what keeps a cherry-pick comparable to upstream:
+
+```bash
+curl -sL <commit-url>.patch -o .tmp/<short-hash>.patch
+quilt import -P CVE-YYYY-NNNNN.patch .tmp/<short-hash>.patch
+quilt push
+```
+
+`gbp pq export` produces the same shape from the patch-queue branch. See `policy.md` (*Source Format And Patches*) for when to preserve the upstream header and when to write a DEP-3 one instead.
 
 Quilt rules that avoid corrupt patch stacks:
 
@@ -198,6 +208,7 @@ Quilt rules that avoid corrupt patch stacks:
 - Keep `.pc/` untracked and do not manually edit it.
 - Keep `debian/patches/series` ordered and deterministic.
 - Prefer `quilt header -e` for DEP-3 metadata so refreshes preserve the header.
+- Avoid `quilt refresh` on a preserved upstream cherry-pick. Refresh rewrites the diff body while keeping everything above it, so the diffstat `git format-patch` emits between `---` and the diff is left describing the old diff. Adjust paths and hunk offsets by editing the file, or drop the diffstat when importing.
 - After patch work, run `quilt pop -a` and confirm `dpkg-source --before-build .` can reapply patches.
 
 Patch filename convention: use short lowercase names with hyphens and `.patch`, for example `fix-ftbfs-gcc-16.patch`. Avoid names that encode temporary bug theories.

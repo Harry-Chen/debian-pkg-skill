@@ -7,7 +7,7 @@ The upstream-source boundary — when to read upstream code rather than just `de
 1. Read the BTS report, package tracker, and Salsa MRs/issues.
 2. Reproduce locally if possible with the package's normal build/test path.
 3. Decide whether the fix belongs in Debian packaging, upstream source, dependencies, or tests.
-4. For upstream source in `3.0 (quilt)`, add or update a quilt patch with DEP-3 headers.
+4. For upstream source in `3.0 (quilt)`, add or update a quilt patch. If the fix already exists upstream, import that commit and keep its `git format-patch` header; otherwise write a DEP-3 header (see `policy.md`).
 5. Update `debian/changelog` with a concise entry and `Closes: #NNNNNN` if appropriate.
 6. Run focused validation, then full build/autopkgtest if the fix affects runtime behavior.
 
@@ -25,7 +25,7 @@ quilt pop -a
 dpkg-source --before-build .
 ```
 
-The patch header must explain provenance and forwarding state. Use `Forwarded: not-needed` only for genuinely Debian-specific changes; otherwise use `Forwarded: no` until the patch is sent upstream.
+That sequence is for a patch written in Debian. Its header must explain provenance and forwarding state: use `Forwarded: not-needed` only for genuinely Debian-specific changes, otherwise `Forwarded: no` until the patch is sent upstream. When the fix instead exists as an upstream commit, `quilt import` it and leave the upstream header alone.
 
 ## New Upstream Release
 
