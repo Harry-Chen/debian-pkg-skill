@@ -1,6 +1,6 @@
 ---
 name: debian-pkg-skill
-description: Debian package maintenance workflows for source packages in Debian repositories. Use when Codex needs to inspect, update, build, test, QA, upload-prep, triage bugs, work with gbp/git-buildpackage, pbuilder, sbuild, autopkgtest, lintian, piuparts, uscan, debusine, tracker.debian.org, bugs.debian.org, salsa.debian.org, or maintain debian/ packaging metadata according to Debian Policy.
+description: Debian package maintenance workflows for source packages in Debian repositories. Use when the agent needs to inspect, update, build, test, QA, upload-prep, triage bugs, work with gbp/git-buildpackage, pbuilder, sbuild, autopkgtest, lintian, piuparts, uscan, debusine, tracker.debian.org, bugs.debian.org, salsa.debian.org, or maintain debian/ packaging metadata according to Debian Policy.
 ---
 
 # Debian Package Skill
