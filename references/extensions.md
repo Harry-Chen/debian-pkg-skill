@@ -25,5 +25,6 @@ Split these out when enough concrete tasks accumulate:
 - `references/rust.md`: debcargo, crate updates, vendoring, feature flags.
 - `references/go.md`: dh-golang, Built-Using, vendoring, module paths.
 - `references/c-library.md`: symbols files, shlibs, Multi-Arch, transitions.
+- `references/debhelper.md`: dh sequences, compat levels, override targets, dh-sequence addons, debputy.
 - `references/kernel.md`: DKMS, module signing, linux-support packages.
 - `references/debusine.md`: concrete CLI/API workflows once local credentials and usage patterns are known.

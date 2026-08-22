@@ -24,8 +24,8 @@ and habits.
   - `tools.md` — gbp, pbuilder, sbuild, devscripts, uscan, quilt, pristine-tar.
   - `qa.md` — lintian, autopkgtest, piuparts, reproducibility, build logs.
   - `services.md` — tracker.d.o, BTS, Salsa, Debusine, buildd, mentors.
-  - `workflows.md` — bug fixes, new upstream releases, NMUs, transitions,
-    FTBFS, pre-upload checklist.
+  - `workflows.md` — bug fixes, new upstream releases, NMUs, backports,
+    transitions, FTBFS, pre-upload checklist.
   - `released-suite-updates.md` — routing and procedure for security uploads
     and stable updates to released suites.
   - `extensions.md` — pointers and candidate future reference files.

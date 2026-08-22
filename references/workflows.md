@@ -94,6 +94,27 @@ Non-maintainer uploads require extra care.
 4. Include changelog entries that clearly identify the fixed bug.
 5. Respect DELAYED queue conventions unless an immediate upload is justified.
 
+## Backport
+
+A backport rebuilds the version in testing for users of a stable suite,
+published in `<codename>-backports`. Read the backports team's contributor
+rules at https://backports.debian.org/ before a first upload; the first upload
+of a source package to a backports suite passes through its NEW queue.
+
+1. Start from the exact source that is in testing — a backport tracks testing,
+   not unstable. Confirm what each suite carries with `rmadison <src>`.
+2. Change as little as possible: ideally only the changelog entry, plus the
+   minimum needed to build and run on the target release (adjusted
+   dependencies, lowered debhelper compat). No new features relative to
+   testing.
+3. Version with `dch --bpo`: it appends the `~bpo<N>+<M>` suffix, which sorts
+   below the testing version so the package upgrades cleanly on the next
+   release, and sets the distribution to `<codename>-backports`.
+4. Build against stable plus stable-backports only; the chroot must not pull
+   build dependencies from testing or unstable.
+5. Validate with the normal ladder and upload with an explicit profile and
+   `.changes` file. Keep rebasing later uploads onto the version in testing.
+
 ## FTBFS
 
 1. Collect failing build log, architecture, suite, build profile, and dependency versions.

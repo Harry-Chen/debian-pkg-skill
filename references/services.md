@@ -42,7 +42,7 @@ https://bugs.debian.org/<bug-number>
 https://bugs.debian.org/src:<source-package>
 ```
 
-For changelog closures, use `Closes: #NNNNNN`. For complicated bug state, prefer explaining the intended BTS control action rather than pretending it happened.
+For changelog closures, use `Closes: #NNNNNN`.
 
 When the user mentions a bug number, verify it in BTS before changing code or changelog:
 
@@ -68,6 +68,24 @@ Common BTS concepts:
 - affects, blocks, blocked-by
 - found/fixed versions
 - usertags for teams
+
+Triage state changes go by mail to `control@bugs.debian.org`, or as `Control:`
+pseudo-headers at the top of a reply to `NNNNNN@bugs.debian.org`. Common
+commands:
+
+```text
+severity NNNNNN important
+tags NNNNNN + moreinfo upstream
+reassign NNNNNN <package> <version>
+forwarded NNNNNN <upstream-bug-url>
+found NNNNNN <version>
+fixed NNNNNN <version>
+merge NNNNNN MMMMMM
+```
+
+Mailing the BTS leaves the workspace — confirm first (see `SKILL.md`). When
+not asked to send, state the intended control commands in the summary rather
+than pretending they happened.
 
 ## Salsa
 
