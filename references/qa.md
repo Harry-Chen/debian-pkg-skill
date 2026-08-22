@@ -37,7 +37,7 @@ Generated files that remain modified after `clean` are a packaging bug unless de
 
 ## Build Validation
 
-Prefer the maintainer's configured clean-build path:
+Prefer the maintainer's configured clean-build path — `LOCAL.md` records it when the environment has one:
 
 ```bash
 gbp buildpackage --git-pbuilder
@@ -84,6 +84,8 @@ autopkgtest ../*.dsc -- qemu <image>
 ```
 
 Use `null` only for quick smoke tests because it is not isolated like schroot/qemu. If tests need network, root, isolation-machine, or installed built binaries, check `Restrictions` and the chosen backend.
+
+Some maintainers drive autopkgtest through their builder wrapper instead of calling `autopkgtest` directly, so the testbed matches the build chroot. When `LOCAL.md` records such a command, prefer it over the raw invocations above.
 
 When adding tests, keep them deterministic and archive-friendly. Avoid external network access unless explicitly allowed by the test restrictions and accepted by Debian CI practice.
 

@@ -17,6 +17,8 @@ and habits.
 - `SKILL.md` — entry point. Frontmatter conforms to the Claude Code / Codex
   Skills format (`name`, `description`). Body describes the operating model,
   first checks, workflow, and a reference map.
+- `LOCAL.md.example` — template for the untracked `LOCAL.md` holding
+  environment-specific defaults (builder, arch/suite, upload targets).
 - `references/` — focused notes loaded on demand:
   - `policy.md` — Debian Policy, changelog/control/copyright/patch rules.
   - `tools.md` — gbp, pbuilder, sbuild, devscripts, uscan, quilt, pristine-tar.
@@ -75,6 +77,21 @@ for all harnesses.
 
 ## Customizing
 
-Builder choice, default architecture and suite, log locations, and upload
-targets differ between maintainers. Adapt the reference files to your own
-conventions; keep the reference map small and the rules concrete.
+Builder choice, default architecture and suite, result and log locations,
+commit timing, and upload targets differ between maintainers — and an agent
+cannot infer them from the package repository. Record yours in `LOCAL.md`:
+
+```bash
+cp LOCAL.md.example LOCAL.md
+$EDITOR LOCAL.md
+```
+
+`LOCAL.md` is git-ignored, so forks do not carry each other's build
+environment. `SKILL.md` and the `references/` reference it but never depend on
+it: with no `LOCAL.md` present, the skill inspects the repository configuration
+and asks instead of guessing.
+
+Everything that is not environment-specific — Debian policy, tool behaviour,
+upload safety rules, workflow structure — belongs in the topical reference file
+rather than in `LOCAL.md`, so every fork benefits from it. Keep the reference
+map small and the rules concrete.

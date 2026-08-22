@@ -35,49 +35,24 @@ gbp buildpackage --git-ignore-new
 gbp buildpackage --git-ignore-new --git-branch=<branch>
 ```
 
-Use `--git-ignore-new` deliberately for this user's pre-upload test builds when `debian/changelog` has been finalized to `unstable` but the release commit is intentionally delayed until after upload. Do not use it to hide uncommitted source, patch, or packaging logic changes.
+Use `--git-ignore-new` deliberately for pre-upload test builds when `debian/changelog` has been finalized but the release commit is intentionally delayed until after upload. Do not use it to hide uncommitted source, patch, or packaging logic changes.
 
-## User Default: gbp With pbuilder
+## gbp With pbuilder
 
-This user usually configures `gbp` to build via pbuilder. Prefer reading config and invoking the existing gbp flow rather than calling `pdebuild` directly.
+`gbp` can drive `pbuilder` so a single `gbp buildpackage` invocation produces a clean-chroot build. Inspect existing config (`~/.gbp.conf`, project `gbp.conf`, `DIST`/`ARCH` in the environment) before assuming chroot names, builder backend, or default suite.
 
 Typical commands:
 
 ```bash
 gbp buildpackage --git-pbuilder
-gbp buildpackage --git-pbuilder --git-arch=amd64 --git-dist=sid
-DIST=unstable ARCH=amd64 git-pbuilder create
-DIST=unstable ARCH=amd64 git-pbuilder update
-DIST=unstable ARCH=amd64 gbp buildpackage --git-pbuilder
+gbp buildpackage --git-pbuilder --git-arch=<arch> --git-dist=<suite>
+DIST=<suite> ARCH=<arch> git-pbuilder create
+DIST=<suite> ARCH=<arch> git-pbuilder update
 ```
 
-For this user, the most common local build command is:
+Treat `sid` and `unstable` as equivalent in Debian suite naming, but preserve the spelling actually used in a command when documenting or rerunning it.
 
-```bash
-gbp buildpackage --git-pbuilder --git-arch=amd64 --git-dist=sid
-```
-
-Prefer this command for clean amd64 sid test builds unless the package or task requires another architecture or suite. If only the finalized release changelog is uncommitted, use:
-
-```bash
-gbp buildpackage --git-pbuilder --git-arch=amd64 --git-dist=sid --git-ignore-new
-```
-
-Treat `sid` and `unstable` as equivalent in Debian suite naming, but preserve the user's command spelling when documenting or rerunning.
-
-For long builds, tee the complete output into a timestamped log under `~/Workspace/build-logs` so the user can monitor it and later failure analysis has the full context:
-
-```bash
-pkg=$(dpkg-parsechangelog --show-field Source)
-ver=$(dpkg-parsechangelog --show-field Version)
-arch=amd64
-dist=sid
-ts=$(date +%Y%m%d-%H%M%S)
-log="$HOME/Workspace/build-logs/$pkg/$pkg-$ver-$arch-$dist-$ts.log"
-mkdir -p "$(dirname "$log")"
-set -o pipefail
-gbp buildpackage --git-pbuilder --git-arch="$arch" --git-dist="$dist" --git-ignore-new 2>&1 | tee "$log"
-```
+Builder choice is a per-maintainer setting: some drive pbuilder through `gbp`, others use sbuild, plain `pdebuild`, or a personal wrapper script with its own result and log directories. Do not assume `gbp buildpackage --git-pbuilder` is the local build path — check `LOCAL.md` and the repository's gbp config, and ask if neither answers it.
 
 If a pbuilder chroot is missing or stale, ask before creating/updating it because that may require root, network, and writes outside the workspace.
 
@@ -97,7 +72,7 @@ Do not assume schroot/unshare backend names. Inspect local config (`~/.sbuildrc`
 
 ## pbuilder
 
-pbuilder builds packages in a clean chroot. It is useful for local reproducibility and dependency sanity. In this user's workflow, prefer gbp's pbuilder integration where possible.
+pbuilder builds packages in a clean chroot. It is useful for local reproducibility and dependency sanity. Prefer gbp's pbuilder integration (see above) over direct `pdebuild` when the repository's gbp config already drives pbuilder.
 
 Common direct commands:
 

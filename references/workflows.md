@@ -69,7 +69,9 @@ quilt refresh
 quilt pop -a
 gbp dch
 editor debian/changelog
-gbp buildpackage --git-pbuilder --git-arch=amd64 --git-dist=sid
+dpkg-buildpackage -S -us -uc
+# then a clean-chroot build of the resulting .dsc with the local builder
+# (gbp --git-pbuilder, sbuild, pdebuild, or a wrapper — see LOCAL.md)
 ```
 
 Drop `--pristine-tar` only when the repository does not use pristine-tar.
@@ -104,7 +106,7 @@ Suggested commit granularity:
 - one commit for symbols/install/rules metadata updates
 - one release commit for final `gbp dch`/upload changelog state when repository practice uses it
 
-For this user, commit non-changelog changes promptly so `gbp dch` has useful input, but usually delay the final release changelog commit until after the upload succeeds. A pre-upload build may therefore have exactly one uncommitted file, `debian/changelog`, with distribution already set to `unstable`; in that case build with `--git-ignore-new` rather than committing the release entry prematurely.
+Commit timing for the release changelog entry varies by maintainer: some commit it before the upload, others delay it until the upload succeeds so the version is never claimed twice. When it is delayed, a pre-upload build legitimately has exactly one uncommitted file, `debian/changelog`, with the distribution already set — build with `--git-ignore-new` (or the builder's equivalent) rather than committing the release entry prematurely. `LOCAL.md` records the local rule.
 
 ## NMU
 
@@ -149,18 +151,15 @@ Run or explicitly defer:
 git status --short
 dpkg-parsechangelog
 gbp config dump
-gbp buildpackage --git-pbuilder --git-arch=amd64 --git-dist=sid --git-ignore-new
-lintian ../*.changes
-autopkgtest ../*.dsc -- <backend>
+dpkg-buildpackage -S -us -uc
+<clean-chroot build of ../<source>_<version>.dsc>    # local builder; see LOCAL.md
+lintian <result-dir>/<source>_<version>_<arch>.changes
+autopkgtest ../<source>_<version>.dsc -- <backend>
 ```
 
-For long-running build commands, write logs to:
+Builders differ in where they leave `.changes`, `.deb`, and `.buildinfo` files: `dpkg-buildpackage` and gbp use `..`, while most chroot wrappers use their own result directory. Resolve that path before running `lintian`, `debdiff`, `debc`, or `dput`.
 
-```text
-~/Workspace/build-logs/<source>/<source>-<version>-<arch>-<dist>-<YYYYmmdd-HHMMSS>.log
-```
-
-Use `set -o pipefail` when piping through `tee` so build failures are not hidden by the pipeline.
+Check whether the builder already writes a timestamped log of its own before piping through `tee`. When you do add a `tee`, use `set -o pipefail` so build failures are not hidden by the pipeline.
 
 Check:
 
