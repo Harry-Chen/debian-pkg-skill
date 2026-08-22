@@ -189,22 +189,93 @@ quilt header -e
 
 ## devscripts Helpers
 
-Useful commands:
+Each entry below is a one-line summary plus a single representative command. Consult the manpage before relying on flags not shown.
 
-```bash
-dch
-debchange
-debuild
-debsign
-debrelease
-debdiff
-debc
-debi
-wrap-and-sort
-mk-build-deps
-```
+- `dch` / `debchange` — edit `debian/changelog` with correct formatting, urgency, and trailer identity. `debchange` is the long-name alias of `dch`.
 
-Use helper tools to reduce formatting mistakes, but review the diff because they can reorder or rewrite packaging files extensively.
+  ```bash
+  dch --newversion 1.2.3-1 'New upstream release.'
+  ```
+
+- `debuild` — wrapper around `dpkg-buildpackage` that also runs `lintian` and signs the result. Useful for quick local builds outside pbuilder/sbuild.
+
+  ```bash
+  debuild -us -uc
+  ```
+
+- `debsign` — sign an already-built `.changes` (and the referenced `.dsc`) with your GPG key. Use after an unsigned build when ready to upload.
+
+  ```bash
+  debsign ../package_1.2.3-1_amd64.changes
+  ```
+
+- `debrelease` — wrapper that uploads the latest `.changes` via `dput`/`dupload`. Same upload-safety rules as bare `dput` apply — prefer explicit `dput <profile> <changes>`.
+
+- `debdiff` — compare two source or binary packages and surface added/removed files, control-field changes, and patch differences. Standard pre-upload sanity check, and the engine behind `nmudiff`.
+
+  ```bash
+  debdiff ../package_1.2.3-1.dsc ../package_1.2.3-2.dsc
+  debdiff ../package_1.2.3-1_amd64.changes ../package_1.2.3-2_amd64.changes
+  ```
+
+- `debc` — list the contents of the binary packages produced by the latest build (reads the `.changes` in `..`). Quick check that the right files landed in the right binary package.
+
+  ```bash
+  debc
+  ```
+
+- `debi` — install the binary packages produced by the latest build into the local system via `sudo dpkg -i`. Useful for ad-hoc local smoke tests; not a substitute for piuparts.
+
+  ```bash
+  debi
+  ```
+
+- `wrap-and-sort` — reformat `debian/control`, `debian/copyright`, and similar files into a canonical wrapped+sorted layout. Run only if the package already uses that style; otherwise it produces large unwanted diffs.
+
+  ```bash
+  wrap-and-sort -ast
+  ```
+
+- `mk-build-deps` — generate and optionally install a `<source>-build-deps` meta-package satisfying the source's `Build-Depends`. Handy when reproducing a build outside a clean chroot.
+
+  ```bash
+  mk-build-deps --install --remove --tool='apt-get -y --no-install-recommends'
+  ```
+
+- `build-rdeps` — list source packages that build-depend on a given binary package. Install `dose-extra` for accurate transitive, architecture-, and profile-aware results; the default falls back to a naive `grep` over `Sources` files.
+
+  ```bash
+  build-rdeps --distribution unstable libfoo-dev
+  ```
+
+  Use before transitions, SONAME bumps, or removals to estimate breakage scope.
+
+- `dget` — fetch a `.dsc` or `.changes` URL and all referenced components, verify checksums and signatures via `dscverify`, and unpack with `dpkg-source`. Works for both archive URLs and mentors/salsa links.
+
+  ```bash
+  dget https://deb.debian.org/debian/pool/main/h/hello/hello_2.10-3.dsc
+  ```
+
+  For plain archive lookups, `apt-get source <pkg>` is usually shorter; reach for `dget` when the source lives outside your apt config or you need signature verification.
+
+- `nmudiff` — generate a `debdiff` between the previous archive version and the freshly built NMU in `..`, open it in `$EDITOR`/`mutt`, and mail the result to the BTS bug(s) the NMU closes. Run from the NMU source tree after the build.
+
+  ```bash
+  nmudiff --delay 5
+  ```
+
+  Use `--new` to file a fresh bug instead of mailing the closed ones; pair with `--delay` matching the DELAYED queue you uploaded to. Required step for any non-trivial NMU.
+
+- `getbuildlog` — download buildd logs for a package across versions and architectures. Patterns are extended regexes; the literal token `last` fetches only the most recent version.
+
+  ```bash
+  getbuildlog zfs-linux last amd64
+  getbuildlog hello '2\.10-.*' '.*'
+  ```
+
+  Use when a binNMU or porter build fails and you need the exact log without clicking through `buildd.debian.org`.
+
+Use these helpers to reduce formatting mistakes and shortcut common lookups, but review their diffs and output — several (notably `wrap-and-sort`, `mk-build-deps`, `debrelease`) can rewrite files or take privileged actions.
 
 ## Upload Helpers
 
