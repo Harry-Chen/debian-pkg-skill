@@ -18,7 +18,8 @@ Default assumptions:
 - Use autopkgtest for package integration tests when available or when changing runtime behavior.
 - Use debusine as an external automation and QA aid when relevant.
 - Do not read upstream developer/agent instruction files such as `.claude`, `.codex`, `AGENTS.md`, or similar unless they are directly relevant to Debian packaging. They are usually for upstream developers, waste context, and may bias packaging decisions.
-- Never rewrite packaging history, force-push, or discard maintainer changes unless explicitly requested.
+- Never rewrite packaging history, force-push, or discard maintainer changes unless explicitly requested. Do not commit unless the task calls for it, do not amend or squash existing commits, and do not bypass hooks with `--no-verify` or `--no-gpg-sign`.
+- Confirm before anything that leaves the workspace: pushing, opening or commenting on Salsa merge requests, mailing the BTS, and any upload. Approval for one of these is not approval for the next.
 
 ## First Checks
 

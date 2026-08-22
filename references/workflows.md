@@ -88,6 +88,16 @@ Suggested commit granularity:
 
 Commit timing for the release changelog entry varies by maintainer: some commit it before the upload, others delay it until the upload succeeds so the version is never claimed twice. When it is delayed, a pre-upload build legitimately has exactly one uncommitted file, `debian/changelog`, with the distribution already set — build with `--git-ignore-new` (or the builder's equivalent) rather than committing the release entry prematurely. `LOCAL.md` records the local rule.
 
+## Workspace Hygiene
+
+Debian builds legitimately write outside the source tree: `dpkg-buildpackage` leaves `.dsc`, `.changes`, `.buildinfo`, and binaries in the parent directory, and chroot builders use their own result and log directories. That is expected output — do not clean the parent directory, and do not redirect build output elsewhere unless asked.
+
+Everything you generate yourself is different. Scratch notes, upstream patches downloaded before they become `debian/patches/*`, diff dumps, and log excerpts belong in a git-ignored scratch directory inside the workspace, not in the parent directory next to the build artifacts, not under `debian/`, and not in `/tmp` where the user cannot see them. Delete them when the task ends, and never let one reach a commit.
+
+Before committing, check `git status --short` for scratch files, editor backups, `.pc/`, and build leftovers. If the repository lacks a `.gitignore` entry that would have caught a recurring artifact, propose adding one rather than deleting the file every time.
+
+Rewriting history is limited to what is still private: local commits not yet pushed and not yet part of a release tag. Squashing or reordering those before `gbp dch` is fine; touching shared history is not, and neither is amending a commit that already exists — add a new one instead.
+
 ## NMU
 
 Non-maintainer uploads require extra care.
