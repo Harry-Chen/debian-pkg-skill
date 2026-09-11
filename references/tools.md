@@ -211,6 +211,26 @@ Quilt rules that avoid corrupt patch stacks:
 - Avoid `quilt refresh` on a preserved upstream cherry-pick. Refresh rewrites the diff body while keeping everything above it, so the diffstat `git format-patch` emits between `---` and the diff is left describing the old diff. Adjust paths and hunk offsets by editing the file, or drop the diffstat when importing.
 - After patch work, run `quilt pop -a` and confirm `dpkg-source --before-build .` can reapply patches.
 
+### CRLF source files
+
+Some upstreams ship CRLF-terminated sources (FreeCAD's `src/Base/Reader.cpp`, `src/App/PropertyPythonObject.cpp`, `src/App/PropertyFile.cpp`, for example) alongside ordinary LF ones in the same tree. A patch against such a file has mixed line endings by necessity, and both halves must be right:
+
+- **Diff body lines** (` ` context, `+`, `-`) must carry `CR` — they are file content, and `patch` compares them literally.
+- **Structural lines** (`diff --git`, `index`, `--- a/…`, `+++ b/…`, `@@ … @@`) must be plain LF — they are patch syntax, not file content.
+
+Get either half wrong and every hunk in that file fails with `different line endings`, which reads like a context mismatch and sends you looking in the wrong place. GNU patch's own hint, `(Stripping trailing CRs from patch; use --binary to disable.)`, is misleading here: `--binary` is not the fix, correct CR placement is.
+
+Check before and after any edit to such a patch:
+
+```bash
+# structural lines that wrongly carry CR (should print nothing)
+grep -nP '^(diff --git |index |--- |\+\+\+ |@@ ).*\r$' debian/patches/foo.patch
+# does the target file itself use CRLF?
+grep -c $'\r' path/to/target.cpp
+```
+
+String-replacement editors and many text tools silently normalise a whole file to LF when rewriting one line, which strips `CR` from every body line at once. A read-back looks perfectly fine; only `patch --dry-run` catches it. Re-run the dry run after *any* edit to a patch that touches a CRLF file, including header-only edits.
+
 Patch filename convention: use short lowercase names with hyphens and `.patch`, for example `fix-ftbfs-gcc-16.patch`. Avoid names that encode temporary bug theories.
 
 When editing an existing patch:
