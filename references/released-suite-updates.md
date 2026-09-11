@@ -65,7 +65,40 @@ True for both routes:
   suite already carries. Check with `rmadison <src>` instead of assuming `u1`;
   a security upload and a stable update share the same counter.
 - Keep the diff minimal and targeted. Neither team accepts refactors, new
-  features, or an upstream version bump as part of an update.
+  features, or an upstream version bump as part of an update — unless the team
+  has explicitly agreed to ship a new upstream point release (see below).
+
+### Shipping a new upstream release instead of patches
+
+Occasionally the Security Team agrees to take an upstream point release whose
+content is essentially the security fixes (libevent 2.1.13 for trixie, 2026).
+Only do this when the team has said so; the default is still targeted patches.
+When it is the route:
+
+- Version it `<upstream>-1~deb<N>u1` (a tilde, so unstable's `-1` sorts
+  higher), distribution `<codename>-security`, and reuse unstable's `debian/`
+  as the base: fetch its `.dsc` and `.debian.tar.xz` and reuse the *same*
+  `orig.tar.*` and `.asc` byte for byte — the archive already has them under
+  that name.
+- Revert packaging changes unstable made that the suite cannot satisfy or does
+  not need: `debhelper-compat` back to what the suite ships (`rmadison -s
+  <codename> debhelper`; trixie has 13), `Standards-Version` back to the
+  suite's value, and any dropped fields (`Priority`, `Rules-Requires-Root`)
+  restored. Aim for `debian/control` identical to the suite's previous
+  revision; `dpkg-checkbuilddeps` on a suite host is the quick check.
+- Build the source with `-sa`: the orig tarball is in the main archive, not
+  the security archive, and `dpkg-genchanges` defaults to `-sd` for a
+  non-`-1` revision.
+- If `dpkg-source` reports "Missing key … needed to verify signature", the
+  tarball was signed with a key absent from `debian/upstream/signing-key.asc`.
+  Verify by hand with a throwaway keyring (`gpg --homedir .tmp/gnupg
+  --keyserver hkps://keys.openpgp.org --recv-keys <fpr>` then `--verify`), and
+  check the tarball against the upstream git tag (`git archive <tag>` vs the
+  unpacked tarball, ignoring generated autotools files). Report the keyring gap
+  to the maintainer rather than fixing it in the security upload.
+- Review the debdiff against the suite's current version, not just against
+  unstable: symbols additions, `shlibs` minimum version bumps, and the
+  `.so` filename change are expected and should be listed in the summary.
 
 ## Security Update
 
@@ -281,22 +314,48 @@ the line numbers should be tightened (see §4).
 
 ### 7. Update `debian/changelog`
 
-Use **`dch --security`** (devscripts) — do not write the header by hand.
-It opens a new stanza with the right shape derived from the current top
-entry: the `+deb<N>u<M>` version suffix is incremented for the matching
-suite, the distribution is set to `<codename>-security`, and urgency is
-set to `high`. Hand-writing the header is error-prone — the suite number,
-the `u<M>` counter, and the distribution name all have to agree, and
-`dch --security` is the only thing that gets all three right at once.
+Set the version and distribution **explicitly**. Do not rely on
+`dch --security` to derive them:
 
 ```bash
 cd <source-tree>
-dch --security        # opens $EDITOR on a freshly-templated stanza
+rmadison <src>        # confirm the u<M> counter the suite already carries
+dch --newversion <stable-ver>+deb13u<M+1> \
+    --distribution trixie-security --force-distribution --urgency high \
+    'Non-maintainer upload by the Security Team.'
+dch -a 'CVE-YYYY-NNNNN: <description>. Add debian/patches/<file>.'   # one per issue
 ```
 
-Then edit the body. Security uploads are per-suite source packages, so run
-`dch --security` once per source tree (trixie tree, bookworm tree, …) —
-not a single stanza spanning multiple suites.
+`dch --security` does **less** than its name suggests. Its man page promises only
+"increment the Debian release number for a Debian Security Team non-maintainer
+upload, and add a Security Team upload changelog comment" — it does *not* derive
+the `+deb<N>u<M>` suffix and does *not* set `<codename>-security`. Run against a
+tree at `1.0.0+dfsg-8+deb13u2` / `trixie` it produces:
+
+```
+freecad (1.0.0+dfsg-8+deb13u2.1) UNRELEASED; urgency=high
+```
+
+— an NMU-style `.1` revision and `UNRELEASED`, neither of which is uploadable.
+Verified on devscripts in trixie, with and without `--no-auto-nmu`. Its one
+genuine convenience is inserting the `* Non-maintainer upload by the Security
+Team.` bullet and setting `urgency=high`; pass those explicitly instead.
+
+Whichever route you take, check the result before moving on — the suite number,
+the `u<M>` counter, and the distribution all have to agree:
+
+```bash
+dpkg-parsechangelog --show-field Version
+dpkg-parsechangelog --show-field Distribution
+```
+
+Passing each bullet as a `dch` argument rather than editing interactively keeps
+this scriptable; `dch` reflows the text to changelog width itself. Note `dch`
+opens `$EDITOR` when given no message argument, and exits leaving the changelog
+untouched if the editor makes no change.
+
+Security uploads are per-suite source packages, so write one stanza per source
+tree (trixie tree, bookworm tree, …) — not a single stanza spanning suites.
 
 Required content of the body:
 
