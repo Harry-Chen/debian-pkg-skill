@@ -5,8 +5,9 @@ and package-tracker checks, Debusine QA uploads, lintian, autopkgtest, piuparts,
 and the commit/changelog habits used in day-to-day source package work.
 
 The skill is harness-agnostic. The same `SKILL.md` + `references/` content drives
-agents under Claude Code, OpenAI Codex, and any tool that reads `AGENTS.md`-style
-instruction files. Harness-specific install metadata lives under `agents/`.
+agents under Claude Code, OpenAI Codex, ChatGPT Skills, and tools that read
+`AGENTS.md`-style instruction files. Harness-specific install metadata lives
+under `agents/`.
 
 The guidance here is operational, not normative. Debian Policy and the relevant
 team documentation remain authoritative; adapt the defaults to your own packages
@@ -14,9 +15,9 @@ and habits.
 
 ## Layout
 
-- `SKILL.md` — entry point. Frontmatter conforms to the Claude Code / Codex
-  Skills format (`name`, `description`). Body describes the operating model,
-  first checks, workflow, and a reference map.
+- `SKILL.md` — entry point. Frontmatter follows the open Agent Skills format
+  (`name`, `description`). Body describes the operating model, first checks,
+  workflow, and a reference map.
 - `LOCAL.md.example` — template for the untracked `LOCAL.md` holding
   environment-specific defaults (builder, arch/suite, upload targets).
 - `references/` — focused notes loaded on demand:
@@ -57,8 +58,17 @@ mkdir -p ~/.codex/skills
 ln -s "$PWD" ~/.codex/skills/debian-pkg-skill
 ```
 
-`agents/openai.yaml` provides the Codex display name and default prompt and
-enables implicit invocation.
+`agents/openai.yaml` provides the Codex and ChatGPT display name and default
+prompt and enables implicit invocation on both products.
+
+### ChatGPT Skills
+
+In a ChatGPT workspace that supports Skills, upload this directory from the
+Skills area and install it for the intended workspace. ChatGPT discovers the
+same `SKILL.md` and supporting references, but installation and availability
+are managed by the workspace rather than by a filesystem symlink. Use Codex or
+another shell-enabled host when the task needs local package files, Debian
+builders, chroots, or signing keys.
 
 ### Other AGENTS.md-aware tools
 

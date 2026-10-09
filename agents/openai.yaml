@@ -4,4 +4,7 @@ interface:
   default_prompt: "Use $debian-pkg-skill to inspect and maintain this Debian package repository."
 
 policy:
+  products:
+    - CHAT
+    - CODEX
   allow_implicit_invocation: true
