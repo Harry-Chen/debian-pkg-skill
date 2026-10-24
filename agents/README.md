@@ -7,8 +7,9 @@ invocation policy).
 
 Adapters present today:
 
-- `openai.yaml` — OpenAI Codex skill metadata. Used when this directory is
-  installed under `~/.codex/skills/` or `.codex/skills/`.
+- `openai.yaml` — OpenAI skill metadata for Codex and ChatGPT Skills. Used when
+  this directory is installed under `~/.codex/skills/`, `.codex/skills/`, or
+  uploaded to a ChatGPT workspace that supports Skills.
 
 Claude Code does not need an adapter file: it reads `SKILL.md` directly from
 the skill directory. AGENTS.md-aware tools (Cursor, Aider, etc.) discover the

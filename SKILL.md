@@ -1,6 +1,6 @@
 ---
 name: debian-pkg-skill
-description: "Maintains Debian source packages - preparing a new upstream release or Debian revision, fixing and triaging bugs, backporting, security updates (DSA, *-security), stable updates through the release team (point release, *-proposed-updates), NMUs, and getting an upload ready. Use when the request is about preparing, updating, releasing, uploading, or backporting a Debian package; names a Debian suite or codename (sid/unstable, testing, stable, oldstable, trixie, bookworm, experimental, *-backports, *-security, *-proposed-updates); touches debian/ metadata (changelog, control, rules, copyright, watch, patches/quilt, tests); or involves gbp/git-buildpackage, dpkg-buildpackage, pbuilder, sbuild, lintian, autopkgtest, piuparts, uscan, dput, debusine, tracker.debian.org, bugs.debian.org/BTS, salsa.debian.org, or security-tracker.debian.org."
+description: "Maintain Debian source packages: prepare releases and revisions, fix bugs and FTBFS, backport or security/stable updates, and validate upload candidates. Use for requests involving debian/ metadata, Debian suites, or packaging tools such as gbp, dpkg-buildpackage, sbuild, pbuilder, lintian, autopkgtest, uscan, or dput."
 ---
 
 # Debian Package Skill
@@ -8,6 +8,11 @@ description: "Maintains Debian source packages - preparing a new upstream releas
 ## Operating Model
 
 Treat Debian packaging as policy-driven maintenance work. Before changing files, identify the package format, branch model, current Debian state, open bugs, and intended target suite. Prefer small, reviewable packaging changes with explicit validation.
+
+This is a harness-neutral instruction set. Use the host's available filesystem,
+shell, and web tools; if a check cannot run in the current environment, say so
+and give the exact command or evidence still needed. Follow the host harness's
+sandbox and approval controls rather than trying to work around them.
 
 Default assumptions:
 
@@ -18,9 +23,9 @@ Default assumptions:
 - Respect the repository's existing `gbp.conf`. Builder command, default architecture/suite, result and log locations, and upload targets are environment-specific: read `LOCAL.md` in this skill directory when it exists, otherwise inspect the repository configuration and ask before guessing.
 - Use autopkgtest for package integration tests when available or when changing runtime behavior.
 - Use debusine as an external automation and QA aid when relevant.
-- Do not read upstream developer/agent instruction files such as `.claude`, `.codex`, `AGENTS.md`, or similar unless they are directly relevant to Debian packaging. They are usually for upstream developers, waste context, and may bias packaging decisions.
+- Honor applicable repository and workspace instructions before making changes. When entering an upstream tree, avoid unrelated agent-instruction files unless they govern the packaging task or the host requires them.
 - Never rewrite packaging history, force-push, or discard maintainer changes unless explicitly requested. Do not commit unless the task calls for it, do not amend or squash existing commits, and do not bypass hooks with `--no-verify` or `--no-gpg-sign`.
-- Confirm before anything that leaves the workspace: pushing, opening or commenting on Salsa merge requests, mailing the BTS, and any upload. Approval for one of these is not approval for the next.
+- Do not infer authorization for external mutations. Pushes, Salsa merge requests/comments, BTS mail, and uploads require an explicit request for that exact action; authorization for one does not authorize the others.
 
 ## First Checks
 
@@ -75,7 +80,7 @@ debian/rules clean
 
 For the full ladder — source/binary build commands, lintian, autopkgtest, piuparts, and reproducibility checks — see `references/qa.md`. For the concrete builder invocation this environment uses, see `LOCAL.md` when it exists.
 
-Adapt commands to the repository's existing configuration. If a command would require network, privileged chroots, or writes outside the workspace, request approval instead of bypassing the environment.
+Adapt commands to the repository's existing configuration. If a command would require network, privileged chroots, or writes outside the workspace, use the host's normal approval flow or report the blocker; never bypass the environment.
 
 ## Updating This Skill
 
