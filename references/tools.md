@@ -336,6 +336,30 @@ Each entry below is a one-line summary plus a single representative command. Con
 
 Use these helpers to reduce formatting mistakes and shortcut common lookups, but review their diffs and output — several (notably `wrap-and-sort`, `mk-build-deps`, `debrelease`) can rewrite files or take privileged actions.
 
+## Build Artifact Inspection
+
+Use exact artifacts from the attempt, not a wildcard spanning old results.
+For interpretation and validation criteria, see [QA evidence](qa.md#build-evidence).
+
+```bash
+dpkg-deb -f ./package.deb Source Version Package Architecture Depends Provides
+dpkg-deb --contents ./package.deb
+dscverify --nosigcheck ./package.dsc
+dscverify --nosigcheck ./package_amd64.changes
+dscverify --nosigcheck ./package_amd64.buildinfo
+mkdir -p .tmp
+inspection_dir=$(mktemp -d .tmp/artifact-inspection.XXXXXX)
+dpkg-deb --extract ./package.deb "$inspection_dir"
+readelf -d "$inspection_dir/usr/lib/<triplet>/libfoo.so.<soname>"
+readelf --dyn-syms --wide "$inspection_dir/usr/lib/<triplet>/libfoo.so.<soname>"
+```
+
+Keep referenced files alongside the manifests for checksum verification.
+`dscverify --nosigcheck` checks unsigned artifact integrity, **not authenticity**;
+use normal signature verification when authentication is required. `readelf`
+inspects ELF metadata statically (`NEEDED`, `SONAME`, exported symbols); do not
+run `ldd` on untrusted binaries. Clean only this inspection directory when done.
+
 ## Upload Helpers
 
 Treat upload helpers as potentially dangerous. They may infer a profile and a recent `.changes` file.
