@@ -14,7 +14,7 @@ Primary sources:
 
 ## Validation Strategy
 
-Use a ladder: static metadata checks, clean source/build checks, lintian, autopkgtest, install/upgrade checks, then archive/service results. Do not run the heaviest tool first unless the task specifically requires it.
+Select checks relevant to the requested change or assessment, starting with the cheapest useful evidence: static metadata checks, clean source/build checks, lintian, autopkgtest, install/upgrade checks, then archive/service results. This is a menu, not a requirement to complete every rung. Run required checks and those justified by the affected behavior; expand research or validation only when a concrete finding needs it. Report unavailable relevant checks as limits on the assessment, without treating every unrun optional check as a blocker. Keep judgments and their explanations in the conversation, following the output-artifact rule in `SKILL.md`.
 
 ## Static And Source Checks
 

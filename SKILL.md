@@ -26,6 +26,8 @@ Default assumptions:
 - Honor applicable repository and workspace instructions before making changes. When entering an upstream tree, avoid unrelated agent-instruction files unless they govern the packaging task or the host requires them.
 - Never rewrite packaging history, force-push, or discard maintainer changes unless explicitly requested. Do not commit unless the task calls for it, do not amend or squash existing commits, and do not bypass hooks with `--no-verify` or `--no-gpg-sign`.
 - Do not infer authorization for external mutations. Pushes, Salsa merge requests/comments, BTS mail, and uploads require an explicit request for that exact action; authorization for one does not authorize the others.
+- Keep judgments in the conversation, never in output artifacts. Do not write upload-readiness verdicts (such as "not ready to upload"), explanations for those verdicts, or other assessment commentary into `debian/changelog`, patch headers, commit messages, or generated deliverables. Keep artifact content factual: changes made, technical patch rationale, and provenance.
+- Scope assessment research and gating to the user's task and concrete evidence. Resolve specific uncertainties with targeted sources and relevant checks; stop when the scoped question is answered. Broaden only for a demonstrated issue or an explicit request, and do not turn optional checks or unrelated findings into completion or upload gates.
 
 ## First Checks
 
