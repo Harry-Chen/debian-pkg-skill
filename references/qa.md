@@ -76,7 +76,7 @@ Repository availability and APT candidate listings are not proof of installation
 
 When the test concerns a library, inspect generated package `Depends`/`Provides`, direct ELF `DT_NEEDED` entries, and applicable symbol versions or namespaces. Use static inspection such as `readelf`, not `ldd` on untrusted artifacts. Check the actual target architecture rather than assuming the host running the inspection is the build architecture.
 
-Do not reject a result solely because an older runtime ABI is co-installed. Build tools or unrelated dependencies may still need it; establish which headers and ABI the rebuilt payload uses. Conversely, direct linkage inspection does not prove an entirely transitioned transitive dependency closure, every inlined/static/header-only dependency, or runtime correctness. Define the expected library packages and ABI for the test, not by banning every older library in the chroot.
+Do not reject a result solely because an older runtime ABI is co-installed. Build tools or unrelated dependencies may still need it; establish which headers and ABI the rebuilt payload uses. Conversely, direct linkage inspection does not prove an entirely transitioned transitive dependency closure, every inlined/static/header-only dependency, or runtime correctness. Define the expected library packages and ABI in the [transition context](transitions.md), not by banning every older library in the chroot.
 
 ### Test Execution
 
@@ -162,4 +162,4 @@ Check reproducibility-sensitive areas:
 
 Use build logs from local builds, buildd, debusine, or reproducible-builds infrastructure to identify environment-specific failures.
 
-For installability and transition checks — reverse dependencies, symbols/shlibs, binNMUs — see the *Library Transition* workflow in `workflows.md`.
+For library-specific cohort discovery, candidate dependency stacks, and rebuild ordering, see the [transition playbook](transitions.md). ABI/symbols and binNMU coordination remain part of the [Library Transition workflow](workflows.md#library-transition).

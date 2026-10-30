@@ -64,6 +64,7 @@ Read only the reference needed for the current task:
 - `references/qa.md`: lintian, autopkgtest, piuparts, reproducibility, build logs, dependency/installability checks.
 - `references/services.md`: tracker.debian.org, bugs.debian.org, salsa.debian.org, debusine, buildd, mentors.
 - `references/workflows.md`: day-to-day packaging workflows — bug fixes, new upstream releases, packaging revisions, NMUs, backports, transitions, FTBFS, autopkgtest regressions, and the pre-upload checklist.
+- `references/transitions.md`: retrieve or compute local library-transition graphs, including unpublished candidates, then seed, schedule, and resume rebuild campaigns.
 - `references/released-suite-updates.md`: landing fixes in a released suite — choosing between a security upload and a stable update, and the full procedure for each.
 - `references/extensions.md`: additional Debian resources to consult or add to this skill over time.
 

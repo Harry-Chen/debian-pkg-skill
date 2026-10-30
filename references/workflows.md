@@ -135,12 +135,13 @@ Compiler/toolchain fixes often belong upstream. If the patch is backported from 
 
 ## Library Transition
 
-1. Identify ABI/API change, reverse dependencies, and release team coordination needs.
-2. Update symbols/shlibs carefully; compare build logs and generated files.
-3. Avoid breaking coinstallability or multiarch metadata.
-4. Consider binNMUs and transition tracker state before upload.
+1. Identify the ABI/API change, old runtime/development package names, candidate binaries, target suite/architecture, and release-team coordination needs. The candidate can be locally prepared; an experimental upload is not a prerequisite for discovering its reverse dependencies.
+2. Retrieve an applicable tracker graph or compute a local one with Ben, then distinguish discovery levels from the seed-adjusted execution plan. Follow the [transition playbook](transitions.md) for cohort selection, bootstrap cycles, dependency stacks, and success-gated scheduling.
+3. Drive rebuilds with a standalone workspace-local script over the seed-adjusted plan ([campaign guidance](transitions.md#standalone-rebuild-campaigns)); validate headers, artifacts, and linkage per [build evidence](qa.md#build-evidence).
+4. Update symbols/shlibs carefully; compare build logs and generated files. Avoid breaking coinstallability or multiarch metadata.
+5. Consider binNMUs, tracker state, and release-team coordination before upload. During a discovery sweep, collect failures and continue independent work; fix prerequisites mid-sweep only when needed to unblock coverage, then retest affected consumers.
 
-Useful tools: `build-rdeps` (see `tools.md`), `dose-builddebcheck`, `ben`, and the release team's transition tracker.
+Useful tools: `build-rdeps`, `ben`, and artifact inspection recipes (see [tools.md](tools.md)), `dose-builddebcheck`, and the release team's transition tracker.
 
 ## Pre-Upload Checklist
 
