@@ -10,10 +10,11 @@ Primary sources:
 - reproducible builds: https://reproducible-builds.org/docs/
 - Debian CI: https://ci.debian.net/
 - buildd: https://buildd.debian.org/
+- Debian control fields, including source/binary version relationships: https://www.debian.org/doc/debian-policy/ch-controlfields.html#source
 
 ## Validation Strategy
 
-Use a ladder: static metadata checks, clean source/build checks, lintian, autopkgtest, install/upgrade checks, then archive/service results. Do not run the heaviest tool first unless the task specifically requires it.
+Select checks relevant to the requested change or assessment, starting with the cheapest useful evidence: static metadata checks, clean source/build checks, lintian, autopkgtest, install/upgrade checks, then archive/service results. This is a menu, not a requirement to complete every rung. Run required checks and those justified by the affected behavior; expand research or validation only when a concrete finding needs it. Report unavailable relevant checks as limits on the assessment, without treating every unrun optional check as a blocker. Keep judgments and their explanations in the conversation, following the output-artifact rule in `SKILL.md`.
 
 ## Static And Source Checks
 
@@ -53,6 +54,53 @@ dpkg-buildpackage -S -us -uc
 ```
 
 When full local chroot builds are unavailable, state that explicitly and run cheaper checks.
+
+## Build Evidence
+
+Keep compilation/linkage, build-time tests, installed-package tests, and runtime smoke tests as separate claims. A zero builder exit status does not establish that every kind of test ran, or that the intended dependency versions were selected.
+
+### Artifact Identity And Integrity
+
+Preserve the exact source input, command, suite, build/host architecture, profiles, builder configuration, dependency manifest, complete log, `.changes`, and `.buildinfo` for each attempt. Attribute outputs through the attempt's `.changes`, not a broad glob over a shared results directory. Copy logs before a later attempt can overwrite them and retain the original archive source version separately from local rebuild suffixes.
+
+For artifact validation:
+
+- Verify every referenced file's checksum and size. `dscverify --nosigcheck` can check unsigned local `.dsc`, `.changes`, and `.buildinfo` files; this checks integrity, not signer authenticity. See the [tool recipes](tools.md#build-artifact-inspection).
+- Check source identity/version and each binary's declared architecture against the intended build. An architecture-independent binary may legitimately accompany architecture-dependent outputs.
+- Do not require all binary `Version` fields to equal the source version. A binary's `Source: name (version)` explicitly identifies its source version, which need not equal its binary version. Without the parenthesized version, its source version is the binary version; without `Source`, its source name is `Package`. Account for binNMUs and deliberate local version changes when matching the source build.
+- Preserve source and binary versions as separate values. A legitimate differently versioned transitional binary is not an unrelated-source artifact, and the original source version is usually the relevant version for an FTBFS report.
+
+### Dependency And ABI Evidence
+
+Repository availability and APT candidate listings are not proof of installation or use. Compare `.buildinfo`'s `Installed-Build-Depends` with an installed-package query inside the build environment. For a particular dependency test, also inspect configuration output and compiler include/library paths: an installed development package can be bypassed by bundled headers.
+
+When the test concerns a library, inspect generated package `Depends`/`Provides`, direct ELF `DT_NEEDED` entries, and applicable symbol versions or namespaces. Use static inspection such as `readelf`, not `ldd` on untrusted artifacts. Check the actual target architecture rather than assuming the host running the inspection is the build architecture.
+
+Do not reject a result solely because an older runtime ABI is co-installed. Build tools or unrelated dependencies may still need it; establish which headers and ABI the rebuilt payload uses. Conversely, direct linkage inspection does not prove an entirely transitioned transitive dependency closure, every inlined/static/header-only dependency, or runtime correctness. Define the expected library packages and ABI in the [transition context](transitions.md), not by banning every older library in the chroot.
+
+### Test Execution
+
+Inspect the log and packaging test targets before saying tests passed:
+
+- Record `DEB_BUILD_OPTIONS=nocheck`, the `nocheck` build profile, selected testbed restrictions, and skipped tests.
+- An empty `override_dh_auto_test`, a disabled CMake test target, or a package with no test invocation can suppress execution even when `nocheck` is absent.
+- Building test executables is not running them. Report compilation success and tests not run separately; use the configured isolated test path for additional runtime assurance.
+
+### Failure Classification
+
+Use the builder exit status, failure stage, and the first substantive compiler/test/resolver diagnostic together. Base any log-parsing automation on real logs from the builder version in use.
+
+| Outcome | Evidence and handling |
+| --- | --- |
+| Build/test failure | Compilation or packaging tests actually failed. For example, sbuild can report `Status: attempted`, `Fail-Stage: build`, and a nonzero exit after `dpkg-buildpackage` fails; it need not say `Status: failed`. Inspect the log to distinguish compilation from tests. |
+| Dependency/installability failure | A resolver conflict or unsatisfied build dependency prevented compilation. `install-deps` is a typical stage. A later `explain-bd-uninstallable` failure may be a secondary diagnostic-tool error; retain the preceding resolver cause. |
+| Infrastructure/setup failure | Chroot creation/access, mirror/network access, missing builder identity, or publication failed. This is not a package compiler failure. |
+| Evidence/validator failure | Missing, stale, inconsistent, or wrongly interpreted logs/artifacts prevent a conclusion. Revalidate existing evidence before spending another full rebuild, especially when the builder itself succeeded. |
+| Blocked | The source was not attempted because required outputs were unavailable. Do not report it as FTBFS. |
+
+A failed build with a candidate dependency is not automatically a regression caused by that dependency. Where attribution is uncertain, compare the identical source and build context against a baseline, including ABI-compatible companion libraries, and record environmental differences. A diagnostic tied to an independently verified API removal is stronger evidence than unrelated test failures in the same campaign.
+
+Keep internal evidence detailed, but public bug text concise: affected source/version, relevant reproduction conditions, the substantive log excerpt with enough context to identify the failing code/test, and any necessary causal caveat. Check existing bugs before submission and never infer permission to send a report from permission to draft it.
 
 ## lintian
 
@@ -114,4 +162,4 @@ Check reproducibility-sensitive areas:
 
 Use build logs from local builds, buildd, debusine, or reproducible-builds infrastructure to identify environment-specific failures.
 
-For installability and transition checks — reverse dependencies, symbols/shlibs, binNMUs — see the *Library Transition* workflow in `workflows.md`.
+For library-specific cohort discovery, candidate dependency stacks, and rebuild ordering, see the [transition playbook](transitions.md). ABI/symbols and binNMU coordination remain part of the [Library Transition workflow](workflows.md#library-transition).

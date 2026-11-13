@@ -301,7 +301,7 @@ Each entry below is a one-line summary plus a single representative command. Con
   mk-build-deps --install --remove --tool='apt-get -y --no-install-recommends'
   ```
 
-- `build-rdeps` — list source packages that build-depend on a given binary package. Install `dose-extra` for accurate transitive, architecture-, and profile-aware results; the default falls back to a naive `grep` over `Sources` files.
+- `build-rdeps` — find source packages that build-depend on a binary package. Current devscripts uses `dose-ceve` when a compatible `dose-extra` (>= 4) is available; otherwise it falls back to simple Sources lookup. `--old` forces that unreliable lookup. Check the backend and metadata context: the command alone guarantees neither complete transitive/profile coverage nor build installability.
 
   ```bash
   build-rdeps --distribution unstable libfoo-dev
@@ -335,6 +335,62 @@ Each entry below is a one-line summary plus a single representative command. Con
   Use when a binNMU or porter build fails and you need the exact log without clicking through `buildd.debian.org`.
 
 Use these helpers to reduce formatting mistakes and shortcut common lookups, but review their diffs and output — several (notably `wrap-and-sort`, `mk-build-deps`, `debrelease`) can rewrite files or take privileged actions.
+
+## ben (transition monitor)
+
+For local graph discovery and predicate examples, see
+[Local Library Transitions](transitions.md). Use the already configured mirror
+(*Chroot Mirrors* above), explicit metadata scope, and a project-local cache:
+
+```bash
+mirror_binaries='<configured binary mirror>'
+mirror_sources='<configured source mirror>'
+suite='unstable'
+archs='amd64'
+components='main'
+cache='.tmp/transition-ben'
+mkdir -p "$cache"
+ben download --suite "$suite" --archs "$archs" --components "$components" \
+  --mirror-binaries "$mirror_binaries" --mirror-sources "$mirror_sources" \
+  --cache-dir "$cache"
+ben monitor --suite "$suite" --archs "$archs" --components "$components" \
+  --mirror-binaries "$mirror_binaries" --mirror-sources "$mirror_sources" \
+  --cache-dir "$cache" --use-cache --output-format levels transition.ben \
+  > "$cache/levels.txt"
+```
+
+`download` takes common options, **not** a positional `.ben`; `monitor` takes the
+configuration. Ben 1.22's `--mirror` sets both mirrors; the separate flags above
+make the per-index choice explicit. In Ben 1.22, `--output-format` recognizes
+`text`, `color` (colored text), `xhtml`/`html` and `json`; any other value,
+including a typo, yields `levels`. Check `ben download --help` and
+`ben monitor --help` for the installed version. See the
+[Ben manpage](https://manpages.debian.org/unstable/ben/ben.1.en.html) and
+[monitor source](https://salsa.debian.org/debian/ben/-/blob/master/frontends/ben_monitor.ml).
+
+## Build Artifact Inspection
+
+Use exact artifacts from the attempt, not a wildcard spanning old results.
+For interpretation and validation criteria, see [QA evidence](qa.md#build-evidence).
+
+```bash
+dpkg-deb -f ./package.deb Source Version Package Architecture Depends Provides
+dpkg-deb --contents ./package.deb
+dscverify --nosigcheck ./package.dsc
+dscverify --nosigcheck ./package_amd64.changes
+dscverify --nosigcheck ./package_amd64.buildinfo
+mkdir -p .tmp
+inspection_dir=$(mktemp -d .tmp/artifact-inspection.XXXXXX)
+dpkg-deb --extract ./package.deb "$inspection_dir"
+readelf -d "$inspection_dir/usr/lib/<triplet>/libfoo.so.<soname>"
+readelf --dyn-syms --wide "$inspection_dir/usr/lib/<triplet>/libfoo.so.<soname>"
+```
+
+Keep referenced files alongside the manifests for checksum verification.
+`dscverify --nosigcheck` checks unsigned artifact integrity, **not authenticity**;
+use normal signature verification when authentication is required. `readelf`
+inspects ELF metadata statically (`NEEDED`, `SONAME`, exported symbols); do not
+run `ldd` on untrusted binaries. Clean only this inspection directory when done.
 
 ## Upload Helpers
 
